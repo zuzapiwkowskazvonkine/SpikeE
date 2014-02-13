@@ -25,6 +25,9 @@ function varargout = Make_Grid_of_Responses_Merged_XYdims_Ampl(varargin)
 % Last Modified by GUIDE v2.5 19-Nov-2013 17:48:13
 
 % Begin initialization code - DO NOT EDIT
+
+% testing Github
+
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
                    'gui_Singleton',  gui_Singleton, ...
