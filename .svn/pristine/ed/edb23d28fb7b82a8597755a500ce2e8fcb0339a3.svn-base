@@ -1,0 +1,1062 @@
+function varargout = SpikeExtractor(varargin)
+% SPIKEEXTRACTOR M-file for SpikeExtractor.fig
+%      SPIKEEXTRACTOR, by itself, creates a new SPIKEEXTRACTOR or raises the existing
+%      singleton*.
+%
+%      H = SPIKEEXTRACTOR returns the handle to a new SPIKEEXTRACTOR or the handle to
+%      the existing singleton*.
+%
+%      SPIKEEXTRACTOR('CALLBACK',hObject,eventData,handles,...) calls the local
+%      function named CALLBACK in SPIKEEXTRACTOR.M with the given input arguments.
+%
+%      SPIKEEXTRACTOR('Property','Value',...) creates a new SPIKEEXTRACTOR or raises the
+%      existing singleton*.  Starting from the left, property value pairs are
+%      applied to the GUI before SpikeExtractor_OpeningFcn gets called.  An
+%      unrecognized property name or invalid value makes property application
+%      stop.  All inputs are passed to SpikeExtractor_OpeningFcn via varargin.
+%
+%      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
+%      instance to run (singleton)".
+%
+% See also: GUIDE, GUIDATA, GUIHANDLES
+%
+% Created by Jerome Lecoq in 2011
+
+% Edit the above text to modify the response to help SpikeExtractor
+
+% Last Modified by GUIDE v2.5 31-Jan-2012 13:10:20
+
+% Begin initialization code - DO NOT EDIT
+gui_Singleton = 1;
+gui_State = struct('gui_Name',       mfilename, ...
+                   'gui_Singleton',  gui_Singleton, ...
+                   'gui_OpeningFcn', @SpikeExtractor_OpeningFcn, ...
+                   'gui_OutputFcn',  @SpikeExtractor_OutputFcn, ...
+                   'gui_LayoutFcn',  [] , ...
+                   'gui_Callback',   []);
+if nargin && ischar(varargin{1})
+    gui_State.gui_Callback = str2func(varargin{1});
+end
+
+if nargout
+    [varargout{1:nargout}] = gui_mainfcn(gui_State, varargin{:});
+else
+    gui_mainfcn(gui_State, varargin{:});
+end
+% End initialization code - DO NOT EDIT
+
+
+% --- Executes just before SpikeExtractor is made visible.
+function SpikeExtractor_OpeningFcn(hObject, eventdata, handles, varargin)
+% This function has no output args, see OutputFcn.
+% hObject    handle to figure
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+% varargin   command line arguments to SpikeExtractor (see VARARGIN)
+
+% Choose default command line output for SpikeExtractor
+handles.output = hObject;
+
+% Update handles structure
+guidata(hObject, handles);
+
+% UIWAIT makes SpikeExtractor wait for user response (see UIRESUME)
+% uiwait(handles.MainWindow);
+
+% We load availables Apps
+RefreshAppsList_Callback(hObject, eventdata, handles);
+
+% We initialize the main variables
+
+% We add all subfolders to matlab search path so that all functions are
+% available
+CurrentMfilePath = mfilename('fullpath');
+[PathToM, name, ext] = fileparts(CurrentMfilePath);
+AllFolderAndSubs = genpath(PathToM);
+addpath(AllFolderAndSubs);
+
+% We change the default colormap to gray
+NewDefaultColorMap=colormap('gray');
+set(0,'DefaultFigureColormap',NewDefaultColorMap);
+
+% We initialize the global variable SpikeGui
+global SpikeGui;
+SpikeGui.MAINhandle=handles;
+InitGUI();
+
+
+% --- Outputs from this function are returned to the command line.
+function varargout = SpikeExtractor_OutputFcn(hObject, eventdata, handles) 
+% varargout  cell array for returning output args (see VARARGOUT);
+% hObject    handle to figure
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Get default command line output from handles structure
+varargout{1} = handles.output;
+
+
+% Function to create the figure to display the Movie
+function OpenDisplay()
+global SpikeGui;
+
+if (~isempty(SpikeGui.hDataDisplay))
+    if (ishandle(SpikeGui.hDataDisplay))
+        figure(SpikeGui.hDataDisplay);
+    else
+        SpikeGui.hDataDisplay=figure('Name','Data display','NumberTitle','off');
+        SpikeGui.ImageHandle=[];
+        SpikeGui.TraceHandle=[];
+    end
+else
+    SpikeGui.hDataDisplay=figure('Name','Data display','NumberTitle','off');
+    SpikeGui.ImageHandle=[];
+    SpikeGui.TraceHandle=[];
+end
+
+
+% Function to update the display on the figure
+% This is optimized for speed to provide fast movie playback
+function DisplayData(handles)
+global SpikeMovieData;
+global SpikeTraceData;
+global SpikeGui;
+
+if (~isempty(SpikeGui.hDataDisplay))
+    if (ishandle(SpikeGui.hDataDisplay))
+        set(0,'CurrentFigure',SpikeGui.hDataDisplay);
+    else
+        SpikeGui.hDataDisplay=figure('Name','Data display','NumberTitle','off');
+        SpikeGui.ImageHandle=[];
+        SpikeGui.TraceHandle=[];
+    end
+else
+    SpikeGui.hDataDisplay=figure('Name','Data display','NumberTitle','off');
+    SpikeGui.ImageHandle=[];
+    SpikeGui.TraceHandle=[];
+end
+
+ListMovies=get(handles.ListSelectMovie,'Value');
+ListTraces=get(handles.ListSelectTrace,'Value');
+
+if ~isempty(ListMovies)
+    RelativeHeightMovietoTrace=3;
+else
+    RelativeHeightMovietoTrace=0;
+end
+
+MovieHeight=RelativeHeightMovietoTrace/(length(ListTraces)+RelativeHeightMovietoTrace);
+MovieWidth=1/length(ListMovies);
+TraceHeight=1/(length(ListTraces)+RelativeHeightMovietoTrace);
+
+% We update the display of movies
+for CurrentMovieNumber=1:length(ListMovies)
+    iMovie=ListMovies(CurrentMovieNumber);
+
+    if (get(handles.View3DSelect,'Value')==1)
+        if (length(SpikeGui.ImageHandle)<CurrentMovieNumber) || any(isempty(SpikeGui.ImageHandle) || any(~ishandle(SpikeGui.ImageHandle)))
+            % We create the full display for the current selected movie
+            % along with its associated labels
+            SpikeGui.SubAxes(CurrentMovieNumber)=axes('Parent',SpikeGui.hDataDisplay,...
+                'OuterPosition',[(CurrentMovieNumber-1)*MovieWidth length(ListTraces)*TraceHeight MovieWidth MovieHeight]);
+            SpikeGui.ImageHandle(CurrentMovieNumber)=surf(SpikeGui.SubAxes(CurrentMovieNumber),...
+                SpikeMovieData(iMovie).Xposition(:,:),SpikeMovieData(iMovie).Yposition(:,:),...
+                double(SpikeMovieData(iMovie).currentMovie(:,:,SpikeGui.CurrentNumberInMovie(iMovie))));
+            xlabel(SpikeGui.SubAxes(CurrentMovieNumber),...
+                SpikeMovieData(iMovie).Label.XLabel);
+            ylabel(SpikeGui.SubAxes(CurrentMovieNumber),...
+                SpikeMovieData(iMovie).Label.YLabel);           
+            set(SpikeGui.SubAxes(CurrentMovieNumber),'CLimMode','manual');
+            set(SpikeGui.SubAxes(CurrentMovieNumber),'ZLimMode','manual');
+        else
+            % We only update the data as the display is already created to
+            % ensure maximal speed
+            set(SpikeGui.ImageHandle(CurrentMovieNumber),'ZData',double(SpikeMovieData(iMovie).currentMovie(:,:,SpikeGui.CurrentNumberInMovie(iMovie))));
+        end
+    else
+        if (length(SpikeGui.ImageHandle)<CurrentMovieNumber) || any(isempty(SpikeGui.ImageHandle) || any(~ishandle(SpikeGui.ImageHandle)))
+            % We create the full display for the current selected movie
+            % along with its associated labels
+            SpikeGui.SubAxes(CurrentMovieNumber)=axes('Parent',SpikeGui.hDataDisplay,...
+                'OuterPosition',[(CurrentMovieNumber-1)*MovieWidth length(ListTraces)*TraceHeight MovieWidth MovieHeight]);
+            XPosVector=mean(SpikeMovieData(iMovie).Xposition(:,:),1);
+            YPosVector=mean(SpikeMovieData(iMovie).Yposition(:,:),2);
+            
+            SpikeGui.ImageHandle(CurrentMovieNumber)=imagesc(XPosVector,YPosVector,...
+                SpikeMovieData(iMovie).currentMovie(:,:,SpikeGui.CurrentNumberInMovie(iMovie)));
+            xlabel(SpikeGui.SubAxes(CurrentMovieNumber),...
+                SpikeMovieData(iMovie).Label.XLabel);
+            ylabel(SpikeGui.SubAxes(CurrentMovieNumber),...
+                SpikeMovieData(iMovie).Label.YLabel);
+            set(SpikeGui.SubAxes(CurrentMovieNumber),'CLimMode','manual');
+        else
+            % We only update the data as the display is already created to
+            % ensure maximal speed
+            set(SpikeGui.ImageHandle(CurrentMovieNumber),'CData',SpikeMovieData(iMovie).currentMovie(:,:,SpikeGui.CurrentNumberInMovie(iMovie)));            
+        end
+    end
+    title(SpikeGui.SubAxes(CurrentMovieNumber),strcat(num2str(SpikeGui.CurrentNumberInMovie(iMovie)),'/',num2str(SpikeMovieData(iMovie).DataSize(3))));
+end
+
+% If no movies we adjust the value of currentMovieNumber to 0
+if isempty(CurrentMovieNumber)
+    CurrentMovieNumber=0;
+end
+
+% We update the display of traces
+for CurrentTraceNumber=1:length(ListTraces)
+    iTrace=ListTraces(CurrentTraceNumber);
+
+    if (length(SpikeGui.TraceHandle)<CurrentTraceNumber) || any(isempty(SpikeGui.TraceHandle) || any(~ishandle(SpikeGui.TraceHandle)))
+        % We create the axes and plot the corresponding curve and its
+        % labels
+        SpikeGui.SubAxes(CurrentMovieNumber+CurrentTraceNumber)=axes('Parent',SpikeGui.hDataDisplay,'OuterPosition',[0 (CurrentTraceNumber-1)*TraceHeight 1 TraceHeight]);
+        
+        SpikeGui.TraceHandle(CurrentTraceNumber)=plot(SpikeGui.SubAxes(CurrentMovieNumber+CurrentTraceNumber),...
+            SpikeTraceData(iTrace).TimePoint,SpikeTraceData(iTrace).currentTrace);
+        xlabel(SpikeGui.SubAxes(CurrentMovieNumber+CurrentTraceNumber),'Time (s)');
+        ylabel(SpikeGui.SubAxes(CurrentMovieNumber+CurrentTraceNumber),SpikeTraceData(iTrace).Label.YLabel);
+
+        if (get(handles.DisplTimeBar,'Value')==1)
+            v=axis(SpikeGui.SubAxes(CurrentMovieNumber+CurrentTraceNumber));
+            SpikeGui.LineHandle(CurrentTraceNumber)=line('XData',[SpikeGui.currentTime SpikeGui.currentTime],'YData',[v(3) v(4)],'Color','r','LineWidth',1);
+        end
+    else
+        if (get(handles.DisplTimeBar,'Value')==1)
+            % We only update the display for the current time point
+            v=axis(SpikeGui.SubAxes(CurrentMovieNumber+CurrentTraceNumber));
+            set(SpikeGui.LineHandle(CurrentTraceNumber),'XData',[SpikeGui.currentTime SpikeGui.currentTime],'YData',[v(3) v(4)]);
+        end
+    end
+end
+
+
+% --------------------------------------------------------------------
+function MovieName_Callback(hObject, eventdata, handles)
+% hObject    handle to MovieName (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on slider movement.
+function PositionSlider_Callback(hObject, eventdata, handles)
+% hObject    handle to PositionSlider (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+global SpikeGui;
+
+NewPos=get(handles.PositionSlider,'Value');
+if NewPos==0
+    set(handles.PositionSlider,'Value',SpikeGui.MinTime/SpikeGui.MaxTime);
+    NewPos=get(handles.PositionSlider,'Value');
+end
+
+SpikeGui.currentTime=NewPos*SpikeGui.MaxTime;
+set(handles.currentTime,'String',num2str(NewPos*SpikeGui.MaxTime));
+
+UpdateFrameNumber(handles);
+DisplayData(handles);
+
+
+% --- Executes during object creation, after setting all properties.
+function PositionSlider_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to PositionSlider (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+
+% --- Executes on key press with focus on PositionSlider and none of its controls.
+function PositionSlider_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to PositionSlider (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in PlayMovie.
+function PlayMovie_Callback(hObject, eventdata, handles)
+% hObject    handle to PlayMovie (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global TimerMovie;
+
+% This is fixed as going faster won't be noticable
+NumberFrameDisplayPerSecond=20;
+OpenDisplay();
+
+if isempty(TimerMovie)
+    TimerMovie=timer('TimerFcn', {@FrameRateDisplay,NumberFrameDisplayPerSecond,handles},...
+        'Period',1/NumberFrameDisplayPerSecond,'ExecutionMode','fixedDelay');
+    start(TimerMovie);
+else
+    if strcmp(get(TimerMovie,'Running'),'off')
+        delete(TimerMovie);
+        TimerMovie=timer('TimerFcn', {@FrameRateDisplay,NumberFrameDisplayPerSecond,handles},...
+            'Period',1/NumberFrameDisplayPerSecond,'ExecutionMode','fixedDelay');
+        start(TimerMovie);
+    end
+end
+
+
+
+% This function is called by the timer to display one frame of the movie
+% at the right frame rate
+function FrameRateDisplay(obj, event,NumberFrameDisplayPerSecond,handles)
+global SpikeGui;
+
+TimeSpeed=str2double(get(handles.FactorRealTime,'String'));
+TimeStep=TimeSpeed/NumberFrameDisplayPerSecond;
+
+if (SpikeGui.currentTime+TimeStep)<SpikeGui.MaxTime
+    SpikeGui.currentTime=SpikeGui.currentTime+TimeStep;
+else
+    SpikeGui.currentTime=SpikeGui.MinTime;
+end
+
+set(handles.currentTime,'String',num2str(SpikeGui.currentTime));
+set(handles.PositionSlider,'Value',SpikeGui.currentTime/SpikeGui.MaxTime);
+UpdateFrameNumber(handles);
+DisplayData(handles);
+    
+
+% --- Executes on key press with focus on PlayMovie and none of its controls.
+function PlayMovie_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to PlayMovie (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in StopMovie.
+function StopMovie_Callback(hObject, eventdata, handles)
+% hObject    handle to StopMovie (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global TimerMovie;
+
+stop(TimerMovie);
+
+% --- Executes on slider movement.
+function SpeedMovieButton_Callback(hObject, eventdata, handles)
+% hObject    handle to SpeedMovieButton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+
+
+% --- Executes during object creation, after setting all properties.
+function SpeedMovieButton_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to SpeedMovieButton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+
+% --- Executes on button press in BatchApps.
+function BatchApps_Callback(hObject, ~, handles)
+% hObject    handle to BatchApps (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global SpikeGui;
+
+% We initiate the batch list
+if (get(handles.BatchApps,'Value')==1)
+    set(handles.BatchApps,'String','STOP');
+    set(handles.AppliedAppsList,'Value',1);
+else
+    set(handles.BatchApps,'String','Batch Apps');
+end
+
+% And process the list while the user does not stop it or we reach the end
+% of the batch list
+try
+    while (get(handles.BatchApps,'Value')==1)
+        CurrentAppNumber=get(handles.AppliedAppsList,'Value');
+        HandleToLoader=str2func(SpikeGui.ListBatchApp(CurrentAppNumber).AppsName);
+        HallObj=findobj('Enable','on');
+        set(HallObj,'Enable','off');
+        set(handles.BatchApps,'Enable','on');
+        
+        if ~isempty(SpikeGui.ListBatchApp(CurrentAppNumber).Settings)
+            h=HandleToLoader([],SpikeGui.ListBatchApp(CurrentAppNumber).Settings);
+        else
+            h=HandleToLoader();
+        end
+        
+        HandleToLoader('ApplyApps_Callback',h,[],guidata(h));
+        if ishandle(h)
+            delete(h);
+        end
+        set(HallObj,'Enable','on');
+        
+        % We update AppNumber in case one Apps change it directly on the interface
+        CurrentAppNumber=get(handles.AppliedAppsList,'Value');
+        UpdateInterface();
+        if CurrentAppNumber<length(SpikeGui.ListBatchApp)
+            set(handles.AppliedAppsList,'Value',CurrentAppNumber+1);
+        else
+            set(handles.BatchApps,'Value',0);
+            set(handles.BatchApps,'String','Batch Apps');
+        end
+    end
+catch errorObj
+    errordlg(errorObj.message,'Error');
+    
+    if exist('h','var')
+        if ishandle(h)
+            delete(h);
+        end
+    end
+    HallObj=findobj('Enable','off');
+    set(HallObj,'Enable','on');
+    set(handles.BatchApps,'Value',0);
+    set(handles.BatchApps,'String','Batch Apps');
+    UpdateInterface();
+end
+
+% --- Executes on selection change in AvailableAppsList.
+function AvailableAppsList_Callback(hObject, eventdata, handles)
+% hObject    handle to AvailableAppsList (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns AvailableAppsList contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from AvailableAppsList
+
+
+% --- Executes during object creation, after setting all properties.
+function AvailableAppsList_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to AvailableAppsList (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: listbox controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in AppliedAppsList.
+function AppliedAppsList_Callback(hObject, eventdata, handles)
+% hObject    handle to AppliedAppsList (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns AppliedAppsList contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from AppliedAppsList
+
+
+% --- Executes during object creation, after setting all properties.
+function AppliedAppsList_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to AppliedAppsList (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: listbox controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in AddApps.
+function AddApps_Callback(hObject, eventdata, handles)
+% hObject    handle to AddApps (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global SpikeGui;
+
+CurrentSelectedApps=get(handles.AvailableAppsList,'Value');
+ListAllApps=get(handles.AvailableAppsList,'String');
+
+AddAppToBatchList(ListAllApps{CurrentSelectedApps},[])
+
+% This function add an Apps to the current batch list
+function AddAppToBatchList(AppName,Settings)
+global SpikeGui;
+
+handles=guidata(gcbo);
+
+ListAllAppliedApps=get(handles.AppliedAppsList,'String');
+NumberAppliedApps=length(ListAllAppliedApps);
+
+% We check for previous occurence of the Apps in the batch list
+% If that happen, number is iterated for each occurence
+FilterNb=1;
+for i=1:length(ListAllAppliedApps)
+    Current=ListAllAppliedApps{i};
+    CellFind=strfind(Current,AppName);
+    if ~isempty(CellFind)
+        CurrentNumber=str2num(Current(CellFind(1)+1+length(AppName):end));
+        FilterNb=max(CurrentNumber+1,FilterNb);
+    end
+end
+NewAppName=[AppName '-' num2str(FilterNb)];
+ListAllAppliedApps{NumberAppliedApps+1}=NewAppName;
+set(handles.AppliedAppsList,'String',ListAllAppliedApps);
+set(handles.AppliedAppsList,'Value',length(ListAllAppliedApps));
+
+SpikeGui.ListBatchApp(NumberAppliedApps+1).Settings=Settings;
+SpikeGui.ListBatchApp(NumberAppliedApps+1).AppsName=AppName;
+
+
+% --- Executes on button press in RemoveApps.
+function RemoveApps_Callback(hObject, eventdata, handles)
+% hObject    handle to RemoveApps (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global SpikeGui;
+
+ListAllAppliedApps=get(handles.AppliedAppsList,'String');
+SelectedAppliedApps=get(handles.AppliedAppsList,'Value');
+NumberAppliedApps=length(ListAllAppliedApps);
+
+ListRemaining=setdiff(1:NumberAppliedApps,SelectedAppliedApps);
+NewSelection=min(NumberAppliedApps-1,SelectedAppliedApps);
+set(handles.AppliedAppsList,'Value',NewSelection);
+set(handles.AppliedAppsList,'String',ListAllAppliedApps(ListRemaining));
+
+% We remove the settings data from the batch list in SpikeGui
+SpikeGui.ListBatchApp=SpikeGui.ListBatchApp(ListRemaining);
+
+% --- Executes on button press in MoveAppsUp.
+function MoveAppsUp_Callback(hObject, eventdata, handles)
+% hObject    handle to MoveAppsUp (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global SpikeGui;
+
+ListAllAppliedApps=get(handles.AppliedAppsList,'String');
+CurrentSelectedApps=get(handles.AppliedAppsList,'Value');
+NumberAppliedApps=length(ListAllAppliedApps);
+
+if (CurrentSelectedApps>1)
+    ListRemaining=1:NumberAppliedApps;
+    ListRemaining(CurrentSelectedApps-1)=CurrentSelectedApps;
+    ListRemaining(CurrentSelectedApps)=CurrentSelectedApps-1;
+    
+    % We swap the settings
+    StoreOld=SpikeGui.ListBatchApp(CurrentSelectedApps-1);
+    SpikeGui.ListBatchApp(CurrentSelectedApps-1)=SpikeGui.ListBatchApp(CurrentSelectedApps);
+    SpikeGui.ListBatchApp(CurrentSelectedApps)=StoreOld;
+
+    set(handles.AppliedAppsList,'String',ListAllAppliedApps(ListRemaining));
+    set(handles.AppliedAppsList,'Value',CurrentSelectedApps-1);
+end
+
+% --- Executes on button press in MoveAppsDown.
+function MoveAppsDown_Callback(hObject, eventdata, handles)
+% hObject    handle to MoveAppsDown (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global SpikeGui;
+
+ListAllAppliedApps=get(handles.AppliedAppsList,'String');
+CurrentSelectedApps=get(handles.AppliedAppsList,'Value');
+NumberAppliedApps=length(ListAllAppliedApps);
+
+if (CurrentSelectedApps<NumberAppliedApps)
+    ListRemaining=1:NumberAppliedApps;
+    ListRemaining(CurrentSelectedApps+1)=CurrentSelectedApps;
+    ListRemaining(CurrentSelectedApps)=CurrentSelectedApps+1;
+    
+    % We swap the settings
+    StoreOld=SpikeGui.ListBatchApp(CurrentSelectedApps+1);
+    SpikeGui.ListBatchApp(CurrentSelectedApps+1)=SpikeGui.ListBatchApp(CurrentSelectedApps);
+    SpikeGui.ListBatchApp(CurrentSelectedApps)=StoreOld;
+
+    set(handles.AppliedAppsList,'String',ListAllAppliedApps(ListRemaining));
+    set(handles.AppliedAppsList,'Value',CurrentSelectedApps+1);
+end
+
+% --- Executes on button press in SettingsApps.
+function SettingsApps_Callback(hObject, eventdata, handles)
+% hObject    handle to SettingsApps (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global SpikeGui;
+
+CurrentApps=get(handles.AppliedAppsList,'Value');
+HallObj=findobj('Enable','on');
+set(HallObj,'Enable','off');
+% We get the real App name from SpikeGui
+HandleToLoader=str2func(SpikeGui.ListBatchApp(CurrentApps).AppsName);
+
+try
+    if ~isempty(SpikeGui.ListBatchApp(CurrentApps).Settings)
+        h=HandleToLoader([],SpikeGui.ListBatchApp(CurrentApps).Settings);
+    else
+        h=HandleToLoader();
+    end
+    uiwait(h);
+    
+    if ishandle(h)
+        SpikeGui.ListBatchApp(CurrentApps).Settings=HandleToLoader('GetSettings',h);
+    end
+catch errorObj
+    errordlg(errorObj.message,'Error');
+end
+
+if exist('h','var')
+    if ishandle(h)
+        delete(h);
+    end
+end
+HallObj=findobj('Enable','off');
+set(HallObj,'Enable','on');
+
+UpdateInterface();
+    
+% --- Executes on button press in RefreshAppsList.
+function RefreshAppsList_Callback(hObject, eventdata, handles)
+% hObject    handle to RefreshAppsList (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+CurrentMfilePath = mfilename('fullpath');
+[PathToM, name, ext] = fileparts(CurrentMfilePath);
+
+Slash=filesep;
+
+% We get the list of Appss
+AppsDir = dir(strcat(PathToM,Slash,'Apps',Slash,'*.fig'));
+
+ListOfApps = {AppsDir.name};
+for i=1:length(ListOfApps)
+    ListOfApps{i}=ListOfApps{i}(1:(length(ListOfApps{i})-4));
+end
+
+set(handles.AvailableAppsList,'String',ListOfApps);
+
+
+% --- Executes on button press in OpenApps.
+function OpenApps_Callback(hObject, eventdata, handles)
+% hObject    handle to OpenApps (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+HallObj=findobj('Enable','on');
+set(HallObj,'Enable','off');
+ListOfApps=get(handles.AvailableAppsList,'String');
+CurrentApps=ListOfApps{get(handles.AvailableAppsList,'Value')};
+HandleToLoader=str2func(CurrentApps);
+
+try
+    h=HandleToLoader();
+    uiwait(h);
+catch errorObj
+    errordlg(errorObj.message,'Error');
+end
+
+if exist('h','var')
+    if ishandle(h)
+        delete(h);
+    end
+end
+HallObj=findobj('Enable','off');
+set(HallObj,'Enable','on');
+
+UpdateInterface();
+
+% This function is to update the interface in case anything change in the
+% data that need some adjustements. 
+function UpdateInterface()
+global SpikeMovieData;
+global SpikeTraceData;
+
+global SpikeGui;
+
+handles=guidata(gcbo);
+
+% We close current figure in case something changed in the data to force
+% update of figure axes
+if isfield(SpikeGui,'hDataDisplay')
+    if (~isempty(SpikeGui.hDataDisplay))
+        if (ishandle(SpikeGui.hDataDisplay))
+            delete(SpikeGui.hDataDisplay);
+        end
+    end
+end
+
+% We extract the maximum length in the memory data as well as the minimal
+% time step
+MinTime=[];
+MaxTime=0;
+
+if isfield(SpikeMovieData,'TimeFrame')
+    if (~isempty(SpikeMovieData))
+        set(handles.ListSelectMovie,'Enable','on');
+        
+        for i=1:length(SpikeMovieData)
+            MaxTime=max(MaxTime,max(SpikeMovieData(i).TimeFrame));
+            if isempty(MinTime)
+                MinTime=min(SpikeMovieData(i).TimeFrame);
+            else
+                MinTime=min(MinTime,min(SpikeMovieData(i).TimeFrame));
+            end
+            TextToMovies{i}=['Movie ' num2str(i)];            
+        end
+        set(handles.ListSelectMovie,'String',TextToMovies);
+        
+        % By default we display all available movies
+        set(handles.ListSelectMovie,'ListboxTop',1);
+        set(handles.ListSelectMovie,'Value',1:length(SpikeMovieData));
+    else
+        set(handles.ListSelectMovie,'String','');
+        set(handles.ListSelectMovie,'Value',[]);
+        set(handles.ListSelectMovie,'Enable','off');
+    end
+else
+    set(handles.ListSelectMovie,'String','');
+    set(handles.ListSelectMovie,'Value',[]);
+    set(handles.ListSelectMovie,'Enable','off');
+end
+    
+if isfield(SpikeTraceData,'TimePoint')
+    if (~isempty(SpikeTraceData))
+        set(handles.ListSelectTrace,'Value',[]);
+        set(handles.ListSelectTrace,'Enable','on');
+        
+        for i=1:length(SpikeTraceData)
+            MaxTime=max(MaxTime,max(SpikeTraceData(i).TimePoint));
+            if isempty(MinTime)
+                MinTime=min(SpikeTraceData(i).TimePoint);
+            else
+                MinTime=min(MinTime,min(SpikeTraceData(i).TimePoint));
+            end
+            TextToTraces{i}=['Trace ' num2str(i)];
+        end
+        set(handles.ListSelectTrace,'String',TextToTraces);
+        
+        % By default we display all available traces  
+        set(handles.ListSelectTrace,'ListboxTop',1);
+        set(handles.ListSelectTrace,'Value',1:length(SpikeTraceData));
+    else
+        set(handles.ListSelectTrace,'String','');
+        set(handles.ListSelectTrace,'Value',[]);
+        set(handles.ListSelectTrace,'Enable','off');
+    end
+else
+    set(handles.ListSelectTrace,'String','');
+    set(handles.ListSelectTrace,'Value',[]);
+    set(handles.ListSelectTrace,'Enable','off');
+end
+
+if (MaxTime>0)
+    set(handles.PlayMovie,'Enable','on');
+    set(handles.StopMovie,'Enable','on');
+    set(handles.PositionSlider,'Enable','on');
+    set(handles.currentTime,'Enable','on');
+    
+    SpikeGui.MaxTime=MaxTime;
+    SpikeGui.MinTime=MinTime;
+    
+    set(handles.PositionSlider,'Value',(MaxTime-MinTime)/MaxTime);
+    set(handles.currentTime,'String',num2str(MinTime));
+    set(handles.TimeText,'String',['/' num2str(MaxTime) ' s']);
+    
+    SpikeGui.currentTime=MinTime;
+    
+    % Create display figure and add image data to it
+    OpenDisplay();
+    UpdateFrameNumber(handles);
+    DisplayData(handles);
+else
+    set(handles.PositionSlider,'Value',0);
+    set(handles.currentTime,'String','0');
+    set(handles.TimeText,'String',['/... s']);
+    set(handles.PlayMovie,'Enable','off');
+    set(handles.StopMovie,'Enable','off');
+    set(handles.PositionSlider,'Enable','off');
+    set(handles.currentTime,'Enable','off');
+end
+
+% --- Executes during object creation, after setting all properties.
+function MainWindow_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to MainWindow (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+
+% --- Executes on key press with focus on MainWindow and none of its controls.
+function MainWindow_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to MainWindow (see GCBO)
+% eventdata  structure with the following fields (see FIGURE)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in LoadPreDefList.
+function LoadPreDefList_Callback(hObject, eventdata, handles)
+% hObject    handle to LoadPreDefList (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+[filename,pathname] = uigetfile('*.mat','Select the MATLAB file list of Apps');
+
+% Open file if exist
+% If "Cancel" is selected then return
+if isequal([filename,pathname],[0,0])
+    return
+    % Otherwise construct the fullfilename and Check and load the file
+else
+    load(fullfile(pathname,filename),'ListApps');
+    for i=1:length(ListApps)
+        AddAppToBatchList(ListApps(i).AppsName,ListApps(i).Settings);
+    end
+end
+
+
+% --- Executes on button press in SaveCurrentList.
+function SaveCurrentList_Callback(hObject, eventdata, handles)
+% hObject    handle to SaveCurrentList (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global SpikeGui;
+
+ListApps=SpikeGui.ListBatchApp(1:length(SpikeGui.ListBatchApp));
+uisave('ListApps');
+
+
+% --- Executes on selection change in ListSelectMovie.
+function ListSelectMovie_Callback(hObject, eventdata, handles)
+% hObject    handle to ListSelectMovie (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns ListSelectMovie contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from ListSelectMovie
+global SpikeGui;
+
+% We close current figure to force re-creation of current display
+if (~isempty(SpikeGui.hDataDisplay))
+    if (ishandle(SpikeGui.hDataDisplay))
+        delete(SpikeGui.hDataDisplay);
+    end
+end
+DisplayData(handles);
+
+
+% --- Executes during object creation, after setting all properties.
+function ListSelectMovie_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to ListSelectMovie (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: listbox controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on slider movement.
+function SpeedSlider_Callback(hObject, eventdata, handles)
+% hObject    handle to SpeedSlider (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+global SpikeGui;
+
+SpeedValue=get(handles.SpeedSlider,'Value');
+MinFactor=0.01;
+NewSpeed=10^(SpeedValue*5)*MinFactor;
+MajorValue=SpikeGui.MaxTime*NewSpeed/1000;
+MinorValue=MajorValue/10;
+
+FinalMat=[MinorValue MajorValue]/SpikeGui.MaxTime;
+set(handles.PositionSlider,'SliderStep',FinalMat);
+set(handles.FactorRealTime,'String',num2str(NewSpeed));
+
+
+% --- Executes during object creation, after setting all properties.
+function SpeedSlider_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to SpeedSlider (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+
+% --- Executes on button press in View3DSelect.
+function View3DSelect_Callback(hObject, eventdata, handles)
+% hObject    handle to View3DSelect (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global SpikeGui;
+
+% We close current figure to force re-creation of current display
+if (~isempty(SpikeGui.hDataDisplay))
+    if (ishandle(SpikeGui.hDataDisplay))
+        delete(SpikeGui.hDataDisplay);
+    end
+end
+
+% Hint: get(hObject,'Value') returns toggle state of View3DSelect
+DisplayData(handles);
+
+
+% --- Executes on selection change in ListSelectTrace.
+function ListSelectTrace_Callback(hObject, eventdata, handles)
+% hObject    handle to ListSelectTrace (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns ListSelectTrace contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from ListSelectTrace
+global SpikeGui;
+
+% We close current figure to force re-creation of current display
+if (~isempty(SpikeGui.hDataDisplay))
+    if (ishandle(SpikeGui.hDataDisplay))
+        delete(SpikeGui.hDataDisplay);
+    end
+end
+
+DisplayData(handles);
+
+
+% --- Executes during object creation, after setting all properties.
+function ListSelectTrace_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to ListSelectTrace (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: listbox controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in DisplTimeBar.
+function DisplTimeBar_Callback(hObject, eventdata, handles)
+% hObject    handle to DisplTimeBar (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of DisplTimeBar
+global SpikeGui;
+
+% We close current figure to force re-creation of current display
+if (~isempty(SpikeGui.hDataDisplay))
+    if (ishandle(SpikeGui.hDataDisplay))
+        delete(SpikeGui.hDataDisplay);
+    end
+end
+
+DisplayData(handles);
+
+
+function FactorRealTime_Callback(hObject, eventdata, handles)
+% hObject    handle to FactorRealTime (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of FactorRealTime as text
+%        str2double(get(hObject,'String')) returns contents of FactorRealTime as a double
+global SpikeGui;
+
+MinFactor=0.01;
+MaxFactor=1000;
+
+SpeedValue=str2double(get(handles.FactorRealTime,'String'));
+if ((SpeedValue>MaxFactor) | (SpeedValue<MinFactor))
+    SpeedValue=max(MinFactor,min(MaxFactor,SpeedValue));
+    set(handles.FactorRealTime,'String',num2str(SpeedValue));
+end
+
+SliderPos=log10(SpeedValue/MinFactor)/5;
+set(handles.SpeedSlider,'Value',SliderPos);
+
+MajorValue=SpikeGui.MaxTime*SpeedValue/1000;
+MinorValue=MajorValue/10;
+
+FinalMat=[MinorValue MajorValue]/SpikeGui.MaxTime;
+set(handles.PositionSlider,'SliderStep',FinalMat);
+
+
+% --- Executes during object creation, after setting all properties.
+function FactorRealTime_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to FactorRealTime (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function currentTime_Callback(hObject, eventdata, handles)
+% hObject    handle to currentTime (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of currentTime as text
+%        str2double(get(hObject,'String')) returns contents of currentTime as a double
+global SpikeGui;
+
+NewPos=str2double(get(handles.currentTime,'String'));
+NewPos=max(min(NewPos,SpikeGui.MaxTime),SpikeGui.MinTime);
+set(handles.currentTime,'String',num2str(NewPos));
+set(handles.PositionSlider,'Value',NewPos/SpikeGui.MaxTime);
+
+SpikeGui.currentTime=NewPos;
+
+UpdateFrameNumber(handles);
+DisplayData(handles);
+
+
+% --- Executes during object creation, after setting all properties.
+function currentTime_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to currentTime (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% Function to find the closest frame number on all frames for the current
+% time position
+function UpdateFrameNumber(handles)
+global SpikeGui;
+global SpikeMovieData;
+
+if isfield(SpikeMovieData,'TimeFrame')
+    if ~isempty(SpikeMovieData(1).TimeFrame)
+        for i=1:length(SpikeMovieData)
+            [Value,Indice]=min(abs(SpikeMovieData(i).TimeFrame-SpikeGui.currentTime));
+            SpikeGui.CurrentNumberInMovie(i)=Indice(1);
+        end
+    end
+end
+    

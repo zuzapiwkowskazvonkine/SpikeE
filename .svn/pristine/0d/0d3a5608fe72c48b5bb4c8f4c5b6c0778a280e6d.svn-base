@@ -1,0 +1,34 @@
+% This function is to initialize (or re-initialize) the data that are
+% shared between functions and with Apps
+function InitFilters()
+
+% SpikeFilterData is shared with all Apps
+% it is a structure that gather all datas
+% SpikeFilterData can be repeated along its first dimensions 
+% Each element will be one Filter.
+global SpikeFilterData;
+
+SpikeFilterData=struct('Path',{},'Filename',{},'Filter',{},'OriginalMovie',{},...
+    'DataSize',{},'Xposition',{},'Yposition',{},'Zposition',{},'Label',struct(...
+    'ListText',{},'XLabel',{},'YLabel',{},'ZLabel',{},...
+    'CLabel',{}));
+
+% Filename and Path store the path to the original file from which the data is coming from
+
+% Filter is the actual data in its current state. It can be
+% modified by all Apps. Size is MxN where 
+% M horizontal pixels
+% N vertical pixels
+
+% OriginalMovie store the movie on which the spatial filter is applied or
+% was extraced from.
+
+% DataSize store the size of Filter
+% Size is 2
+
+% Xposition, Yposition and Zposition are space matrix. They store the
+% actual position in space of all pixels. Each Movie has its own position
+% matrix
+% Size is MxN
+
+% Label store the text values associated with various labelling text

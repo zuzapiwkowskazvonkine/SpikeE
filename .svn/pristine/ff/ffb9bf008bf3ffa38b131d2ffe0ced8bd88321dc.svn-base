@@ -1,0 +1,256 @@
+function varargout = PSTH_xcorr(varargin)
+% PSTH_XCORR M-file for PSTH_xcorr.fig
+%      PSTH_XCORR, by itself, creates a new PSTH_XCORR or raises the existing
+%      singleton*.
+%
+%      H = PSTH_XCORR returns the handle to a new PSTH_XCORR or the handle to
+%      the existing singleton*.
+%
+%      PSTH_XCORR('CALLBACK',hObject,eventData,handles,...) calls the local
+%      function named CALLBACK in PSTH_XCORR.M with the given input arguments.
+%
+%      PSTH_XCORR('Property','Value',...) creates a new PSTH_XCORR or raises the
+%      existing singleton*.  Starting from the left, property value pairs are
+%      applied to the GUI before PSTH_xcorr_OpeningFcn gets called.  An
+%      unrecognized property name or invalid value makes property application
+%      stop.  All inputs are passed to PSTH_xcorr_OpeningFcn via varargin.
+%
+%      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
+%      instance to run (singleton)".
+%
+% See also: GUIDE, GUIDATA, GUIHANDLES
+
+% Edit the above text to modify the response to help PSTH_xcorr
+
+% Last Modified by GUIDE v2.5 09-Apr-2012 16:44:33
+
+% Begin initialization code - DO NOT EDIT
+gui_Singleton = 1;
+gui_State = struct('gui_Name',       mfilename, ...
+                   'gui_Singleton',  gui_Singleton, ...
+                   'gui_OpeningFcn', @PSTH_xcorr_OpeningFcn, ...
+                   'gui_OutputFcn',  @PSTH_xcorr_OutputFcn, ...
+                   'gui_LayoutFcn',  [] , ...
+                   'gui_Callback',   []);
+if nargin && ischar(varargin{1})
+    gui_State.gui_Callback = str2func(varargin{1});
+end
+
+if nargout
+    [varargout{1:nargout}] = gui_mainfcn(gui_State, varargin{:});
+else
+    gui_mainfcn(gui_State, varargin{:});
+end
+% End initialization code - DO NOT EDIT
+
+
+% --- Executes just before PSTH_xcorr is made visible.
+function PSTH_xcorr_OpeningFcn(hObject, eventdata, handles, varargin)
+% This function has no output args, see OutputFcn.
+% hObject    handle to figure
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+% varargin   command line arguments to PSTH_xcorr (see VARARGIN)
+
+% Choose default command line output for PSTH_xcorr
+handles.output = hObject;
+
+% Update handles structure
+guidata(hObject, handles);
+
+% UIWAIT makes PSTH_xcorr wait for user response (see UIRESUME)
+% uiwait(handles.figure1);
+
+global SpikeTraceData;
+
+   if ~isempty(SpikeTraceData)
+        for i=1:length(SpikeTraceData)
+            TextTrace_Stims{i}=['Trace ',num2str(i)];
+        end
+        set(handles.TraceSelector_Stims,'String',TextTrace_Stims);
+        set(handles.TraceSelector_Stims,'Value',7);
+    end
+    
+    
+    if ~isempty(SpikeTraceData)
+        for i=1:length(SpikeTraceData)
+            TextTrace_Spikes{i}=['Trace ',num2str(i)];
+        end
+        set(handles.TraceSelector_Spikes,'String',TextTrace_Spikes);
+        set(handles.TraceSelector_Spikes,'Value',6);
+    end
+
+if (length(varargin)>1)
+    Settings=varargin{2};
+%     set(handles.TraceSelector_Stims,'String',Settings.TraceSelectorStimsString);
+%     set(handles.TraceSelector_Stims,'Value',Settings.TraceSelectorStimsValue);
+% %     set(handles.TraceSelector_Spikes,'String',Settings.TraceSelectorSpikesString);
+%     set(handles.TraceSelector_Spikes,'Value',Settings.TraceSelectorSpikesValue);
+    set(handles.Lag,'String',Settings.LagString);
+
+      
+end
+
+
+% --- Outputs from this function are returned to the command line.
+function varargout = PSTH_xcorr_OutputFcn(hObject, eventdata, handles) 
+% varargout  cell array for returning output args (see VARARGOUT);
+% hObject    handle to figure
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Get default command line output from handles structure
+varargout{1} = handles.output;
+
+
+% This function send the current settings to the main interface for saving
+% purposes and for the batch mode
+function Settings=GetSettings(hObject)
+handles=guidata(hObject);
+Settings.TraceSelectorStimsString=get(handles.TraceSelector_Stims,'String');
+Settings.TraceSelectorStimsValue=get(handles.TraceSelector_Stims,'Value');
+Settings.TraceSelectorSpikesString=get(handles.TraceSelector_Spikes,'String');
+Settings.TraceSelectorSpikesValue=get(handles.TraceSelector_Spikes,'Value');
+Settings.LagString=get(handles.Lag,'String');
+
+
+% --- Executes on button press in ApplyApps.
+function ApplyApps_Callback(hObject, eventdata, handles)
+% hObject    handle to ApplyApps (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global SpikeTraceData;
+global savefile_epstart;
+global savefile_eplast;
+global savefile;
+
+TracesToApply_Stims=get(handles.TraceSelector_Stims,'Value');
+TracesToApply_Spikes=get(handles.TraceSelector_Spikes,'Value');
+
+
+%%%%%%%%%%%%%
+
+lag=str2double(get(handles.Lag,'String'))/1000; %in s
+
+binsize = SpikeTraceData(TracesToApply_Stims).XVector(2)-SpikeTraceData(TracesToApply_Stims).XVector(1); %in sec
+
+psth_xcorr(SpikeTraceData(TracesToApply_Stims).Trace,SpikeTraceData(TracesToApply_Spikes).Trace,lag,binsize,handles);
+
+
+ basename=[savefile '_ep' int2str(savefile_epstart) '-' int2str(savefile_eplast)]
+ fig_fig=[basename '_psth' '.fig'];
+ fig_tiff=[basename '_psth' '.tif'];
+ print(222,'-dtiff',fig_tiff);
+ saveas(222,fig_fig);
+
+ValidateValues_Callback(hObject, eventdata, handles);
+
+%%%%%%%%%%%%
+
+
+% xcorr of 2 vectors containing numbers of events per time bin (ie spikes and
+% stimulations): produces psth with binsize equal to the binsize of the
+% vectors.
+
+function psth_xcorr(stimtimes,spiketimes,lag,binsize,handles)
+
+
+maxlag=lag; % in s
+
+[ccs,lags]=xcorr(spiketimes(:),stimtimes(:),floor(maxlag/binsize));
+
+xminlag=-floor(maxlag/binsize);
+xmaxlag=floor(maxlag/binsize);
+
+figure(222);
+stem(lags,ccs/(sum(stimtimes)*binsize),'k.-','Markersize',0)  %correlation divided by number of stimuli and by binsize in s -> firing rate in Hz
+axis([xminlag xmaxlag 0 10+max(ccs/(sum(stimtimes)*binsize))])
+xlabel('time (bins)')
+ylabel('firing rate (Hz)')
+   
+
+
+% --- Executes on button press in ValidateValues.
+function ValidateValues_Callback(hObject, eventdata, handles)
+% hObject    handle to ValidateValues (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+uiresume;
+
+
+
+
+
+
+% --- Executes on selection change in TraceSelector_Stims.
+function TraceSelector_Stims_Callback(hObject, eventdata, handles)
+% hObject    handle to TraceSelector_Stims (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns TraceSelector_Stims contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from TraceSelector_Stims
+
+
+
+% --- Executes during object creation, after setting all properties.
+function TraceSelector_Stims_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to TraceSelector_Stims (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function Lag_Callback(hObject, eventdata, handles)
+% hObject    handle to Lag (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of Lag as text
+%        str2double(get(hObject,'String')) returns contents of Lag as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function Lag_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to Lag (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in TraceSelector_Spikes.
+function TraceSelector_Spikes_Callback(hObject, eventdata, handles)
+% hObject    handle to TraceSelector_Spikes (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns TraceSelector_Spikes contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from TraceSelector_Spikes
+
+
+% --- Executes during object creation, after setting all properties.
+function TraceSelector_Spikes_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to TraceSelector_Spikes (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+

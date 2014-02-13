@@ -1,0 +1,30 @@
+% This function is to initialize (or re-initialize) the data that are
+% shared between functions and with Apps
+function InitTraces()
+
+% SpikeTraceData is shared with all Apps
+% it is a structure that gather all datas
+% SpikeTraceData can be repeated along its first dimensions 
+% Each element will be one Trace.
+global SpikeTraceData;
+
+SpikeTraceData=struct('Path',{},'Filename',{},'Trace',{},'OriginalMovie',{},...
+    'DataSize',{},'TimePoint',{},'Label',struct('ListText',{},'YLabel',{}));
+
+% Filename and Path store the path to the original file from which the data is coming from
+
+% Trace is the actual data in its current state. It can be
+% modified by all Apps. Size is T where 
+% T is number of Time points
+
+% OriginalMovie store the movie on which the trace is applied or
+% was extraced from. In some cases, this is irrelevant.
+
+% DataSize store the size of Trace
+% Size is 1
+
+% TimePoint store the time at which all points have been acquired in
+% seconds.
+% Size is T
+
+% Label store the text values associated with various labelling text

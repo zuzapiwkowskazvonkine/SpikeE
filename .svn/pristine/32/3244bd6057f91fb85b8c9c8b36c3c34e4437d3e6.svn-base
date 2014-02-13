@@ -1,0 +1,46 @@
+% This function is to initialize (or re-initialize) the data that are
+% shared between functions and with Apps
+function InitTraces()
+
+% Spike Data is shared with all Apps
+% it is a structure that gather all datas
+% SpikeMovieData can be repeated along its first dimensions 
+% Each element will be one movie.
+global SpikeTraceData;
+
+if isfield(SpikeTraceData,'currentPath')
+    if ~isempty(SpikeTraceData)
+        KeepPath=SpikeTraceData(1).currentPath;
+    else
+        KeepPath=[];
+    end
+else
+    KeepPath=[];
+end
+SpikeTraceData=[];
+
+% currentFilename and currentPath store the path to the file that is being
+% analysed. This will also evolve with batch mode to an array
+% We keep currentPath if it is available
+SpikeTraceData(1).currentPath=KeepPath;
+
+SpikeTraceData(1).currentFilename=[];
+
+% currentTrace is the actual data in its current state. It can be
+% modified by all Apps. Size is T where 
+% T is number of Time points
+SpikeTraceData(1).currentTrace=[];
+
+% DataSize store the size of currentMovie
+% Size is 2
+SpikeTraceData(1).DataSize=[];
+
+
+% TimePoint store the time at which all points have been acquired in
+% seconds.
+% Size is T
+SpikeTraceData(1).TimePoint=[];
+
+% Label store the text values associated with the labelling text for each
+% axes
+SpikeTraceData(1).Label.YLabel='';

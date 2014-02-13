@@ -1,0 +1,549 @@
+function varargout = Motion_Correction_dft(varargin)
+% MOTION_CORRECTION_DFT MATLAB code for Motion_Correction_dft.fig
+%      MOTION_CORRECTION_DFT, by itself, creates a new MOTION_CORRECTION_DFT or raises the existing
+%      singleton*.
+%
+%      H = MOTION_CORRECTION_DFT returns the handle to a new MOTION_CORRECTION_DFT or the handle to
+%      the existing singleton*.
+%
+%      MOTION_CORRECTION_DFT('CALLBACK',hObject,eventData,handles,...) calls the local
+%      function named CALLBACK in MOTION_CORRECTION_DFT.M with the given input arguments.
+%
+%      MOTION_CORRECTION_DFT('Property','Value',...) creates a new MOTION_CORRECTION_DFT or raises the
+%      existing singleton*.  Starting from the left, property value pairs are
+%      applied to the GUI before Motion_Correction_dft_OpeningFcn gets called.  An
+%      unrecognized property name or invalid value makes property application
+%      stop.  All inputs are passed to Motion_Correction_dft_OpeningFcn via varargin.
+%
+%      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
+%      instance to run (singleton)".
+%
+% See also: GUIDE, GUIDATA, GUIHANDLES
+%
+% Created by Jerome Lecoq in 2011
+
+% Edit the above text to modify the response to help Motion_Correction_dft
+
+% Last Modified by GUIDE v2.5 06-Feb-2012 21:31:21
+
+% Begin initialization code - DO NOT EDIT
+gui_Singleton = 1;
+gui_State = struct('gui_Name',       mfilename, ...
+                   'gui_Singleton',  gui_Singleton, ...
+                   'gui_OpeningFcn', @Motion_Correction_dft_OpeningFcn, ...
+                   'gui_OutputFcn',  @Motion_Correction_dft_OutputFcn, ...
+                   'gui_LayoutFcn',  [] , ...
+                   'gui_Callback',   []);
+if nargin && ischar(varargin{1})
+    gui_State.gui_Callback = str2func(varargin{1});
+end
+
+if nargout
+    [varargout{1:nargout}] = gui_mainfcn(gui_State, varargin{:});
+else
+    gui_mainfcn(gui_State, varargin{:});
+end
+% End initialization code - DO NOT EDIT
+
+
+% --- Executes just before Motion_Correction_dft is made visible.
+function Motion_Correction_dft_OpeningFcn(hObject, eventdata, handles, varargin)
+% This function has no output args, see OutputFcn.
+% hObject    handle to figure
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+% varargin   command line arguments to Motion_Correction_dft (see VARARGIN)
+global SpikeMovieData;
+
+% Choose default command line output for Motion_Correction_dft
+handles.output = hObject;
+
+% Update handles structure
+guidata(hObject, handles);
+
+% UIWAIT makes Motion_Correction_dft wait for user response (see UIRESUME)
+% uiwait(handles.figure1);
+
+if (length(varargin)>1)
+    Settings=varargin{2};
+    set(handles.MovieSelector,'Value',Settings.MovieSelectorValue);
+    set(handles.MovieSelector,'String',Settings.MovieSelectorString);
+    set(handles.RefFrameNumber,'String',Settings.RefFrameNumberString);
+    set(handles.MeanFilterSize,'String',Settings.MeanFilterSizeString);
+    set(handles.ApplyMeanFilter,'Value',Settings.ApplyMeanFilterValue);
+    set(handles.SelectSubRegion,'Value',Settings.SelectSubRegionValue);
+    set(handles.AdujstRange,'Value',Settings.AdujstRangeValue);
+    set(handles.TopValueRange,'String',Settings.TopValueRangeString);
+    set(handles.BottomValueRange,'String',Settings.BottomValueRangeString);
+    set(handles.CurrentFrameValue,'String',Settings.CurrentFrameValueString);
+    set(handles.DisplMotion,'Value',Settings.DisplMotionValue);
+else
+    if ~isempty(SpikeMovieData)
+        for i=1:length(SpikeMovieData)
+            TextMovie{i}=['Movie ',num2str(i)];
+        end
+    end
+    set(handles.MovieSelector,'String',TextMovie);
+end
+
+
+% This function send the current settings to the main interface for saving
+% purposes and for the batch mode
+function Settings=GetSettings(hObject)
+handles=guidata(hObject);
+Settings.MovieSelectorValue=get(handles.MovieSelector,'Value');
+Settings.MovieSelectorString=get(handles.MovieSelector,'String');
+Settings.RefFrameNumberString=get(handles.RefFrameNumber,'String');
+Settings.MeanFilterSizeString=get(handles.MeanFilterSize,'String');
+Settings.ApplyMeanFilterValue=get(handles.ApplyMeanFilter,'Value');
+Settings.SelectSubRegionValue=get(handles.SelectSubRegion,'Value');
+Settings.AdujstRangeValue=get(handles.AdujstRange,'Value');
+Settings.TopValueRangeString=get(handles.TopValueRange,'String');
+Settings.BottomValueRangeString=get(handles.BottomValueRange,'String');
+Settings.CurrentFrameValueString=get(handles.CurrentFrameValue,'String');
+Settings.DisplMotionValue=get(handles.DisplMotion,'Value');
+
+
+% --- Outputs from this function are returned to the command line.
+function varargout = Motion_Correction_dft_OutputFcn(hObject, eventdata, handles) 
+% varargout  cell array for returning output args (see VARARGOUT);
+% hObject    handle to figure
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Get default command line output from handles structure
+varargout{1} = handles.output;
+
+
+%  Function to display pre-processed Image
+function DisplayImage()
+global SpikeGui;
+
+handles=guidata(gcbo);
+if isfield(handles,'hFigImageMotCorr')
+    if (isempty(handles.hFigImageMotCorr) || ~ishandle(handles.hFigImageMotCorr))
+        handles.hFigImageMotCorr=figure('Name','Motion correction picture','NumberTitle','off');
+    else
+        figure(handles.hFigImageMotCorr);
+    end
+else
+    handles.hFigImageMotCorr=figure('Name','Motion correction picture','NumberTitle','off');
+end
+
+if (ishandle(SpikeGui.hDataDisplay))
+    GlobalColorMap = get(SpikeGui.hDataDisplay,'Colormap');
+    set(handles.hFigImageMotCorr,'Colormap',GlobalColorMap)
+end
+
+imagesc(handles.PostProcessPic);
+guidata(gcbo,handles);
+
+
+% This function apply the set of all selected filters to the current
+% picture
+function ProcessImage()
+global SpikeMovieData;
+
+handles=guidata(gcbo);
+CurrentMovie=get(handles.MovieSelector,'Value');
+
+handles.PostProcessPic=squeeze(SpikeMovieData(CurrentMovie).currentMovie(:,:,str2num(get(handles.CurrentFrameValue,'String'))));
+handles.PostProcessPic=SinglePicProcess(handles.PostProcessPic,handles);
+guidata(gcbo,handles);
+
+function PicOut=SinglePicProcess(PicIn,handles)
+
+if (get(handles.ApplyMeanFilter,'Value')==1)
+    hFilter=fspecial('disk',str2double(get(handles.MeanFilterSize,'String')));
+    PicIn = imfilter(PicIn,hFilter);
+end
+
+if (get(handles.SelectSubRegion,'Value')==1)
+    PicIn=imcrop(PicIn,handles.SubRegMotCorr);
+end
+
+if (get(handles.AdujstRange,'value')==1)
+    TopValue=max(max(PicIn));
+    BotValue=min(min(PicIn));
+    TopF=str2double(get(handles.TopValueRange,'String'))/100*(TopValue-BotValue)+BotValue;
+    BotF=str2double(get(handles.BottomValueRange,'String'))/100*(TopValue-BotValue)+BotValue;
+
+    ILow=find(PicIn(:)<BotF);
+    IHigh=find(PicIn(:)>TopF);
+    
+    PicIn(ILow)=BotF;
+    PicIn(IHigh)=TopF;
+end
+
+PicOut=PicIn;
+
+% --- Executes on selection change in MovieSelector.
+function MovieSelector_Callback(hObject, eventdata, handles)
+% hObject    handle to MovieSelector (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns MovieSelector contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from MovieSelector
+ProcessImage();
+DisplayImage();
+
+% --- Executes during object creation, after setting all properties.
+function MovieSelector_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to MovieSelector (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in ValidateValues.
+function ValidateValues_Callback(hObject, eventdata, handles)
+% hObject    handle to ValidateValues (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+if isfield(handles,'hFigImageMotCorr')
+    if (ishandle(handles.hFigImageMotCorr))
+        delete(handles.hFigImageMotCorr);
+    end
+end
+uiresume;
+
+
+function RefFrameSelect_Callback(hObject, eventdata, handles)
+% hObject    handle to RefFrameSelect (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of RefFrameSelect as text
+%        str2double(get(hObject,'String')) returns contents of RefFrameSelect as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function RefFrameSelect_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to RefFrameSelect (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in TestAlignCurrentFrame.
+function TestAlignCurrentFrame_Callback(hObject, eventdata, handles)
+% hObject    handle to TestAlignCurrentFrame (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global SpikeMovieData;
+
+CurrentMovie=get(handles.MovieSelector,'Value');
+
+GPic=size(handles.PostProcessPic);
+BigPicToAlign=squeeze(SpikeMovieData(CurrentMovie).currentMovie(:,:,str2num(get(handles.CurrentFrameValue,'String'))));
+PicRef=squeeze(SpikeMovieData(CurrentMovie).currentMovie(:,:,str2num(get(handles.RefFrameNumber,'String'))));
+BigPicRef=PicRef;
+PicRef=SinglePicProcess(PicRef,handles);
+[M,N] = size(BigPicToAlign);
+
+[output] = dftregistration(fft2(PicRef),fft2(handles.PostProcessPic),100);
+xform=[1 0 0;0 1 0;output(4) output(3) 1];
+tform=maketform('affine',double(xform));
+MotionTest=imtransform(BigPicToAlign,tform,'nearest' ,'XData',[1 N],'YData',[1 M],'FillValues',0);
+
+if isfield(handles,'hFigImageTestMotCorr')
+    if (isempty(handles.hFigImageTestMotCorr) || ~ishandle(handles.hFigImageTestMotCorr))
+        handles.hFigImageTestMotCorr=figure('Name','Test Motion correction','NumberTitle','off');
+    else
+        figure(handles.hFigImageTestMotCorr);
+    end
+else
+    handles.hFigImageTestMotCorr=figure('Name','Test Motion correction','NumberTitle','off');
+end
+
+imagesc(BigPicRef);
+hold on;
+h=imagesc(MotionTest);
+hold off;
+ 
+block_size = 10;
+P = ceil(M / block_size);
+Q = ceil(N / block_size);
+alpha_data = checkerboard(block_size, P, Q) > 0;
+alpha_data = alpha_data(1:M, 1:N);
+
+% alpha_data = 0.3*ones(GPic(1),GPic(2));
+set(h, 'AlphaData', alpha_data);
+guidata(hObject,handles);
+
+
+function CurrentFrameValue_Callback(hObject, eventdata, handles)
+% hObject    handle to CurrentFrameValue (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of CurrentFrameValue as text
+%        str2double(get(hObject,'String')) returns contents of CurrentFrameValue as a double
+ProcessImage();
+DisplayImage();
+
+
+% --- Executes during object creation, after setting all properties.
+function CurrentFrameValue_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to CurrentFrameValue (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in NextFrame.
+function NextFrame_Callback(hObject, eventdata, handles)
+% hObject    handle to NextFrame (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global SpikeMovieData;
+CurrentMovie=get(handles.MovieSelector,'Value');
+CurrentIndex=str2num(get(handles.CurrentFrameValue,'String'));
+
+NextIndex=CurrentIndex+1;
+NextIndex=min(SpikeMovieData(CurrentMovie).DataSize(3),NextIndex);
+set(handles.CurrentFrameValue,'String',num2str(NextIndex));
+ProcessImage();
+DisplayImage();
+
+
+% --- Executes on button press in PreviousFrame.
+function PreviousFrame_Callback(hObject, eventdata, handles)
+% hObject    handle to PreviousFrame (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+CurrentIndex=str2num(get(handles.CurrentFrameValue,'String'));
+
+NextIndex=CurrentIndex-1;
+NextIndex=max(1,NextIndex);
+set(handles.CurrentFrameValue,'String',num2str(NextIndex));
+ProcessImage();
+DisplayImage();
+
+
+% --- Executes on button press in ApplyMeanFilter.
+function ApplyMeanFilter_Callback(hObject, eventdata, handles)
+% hObject    handle to ApplyMeanFilter (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of ApplyMeanFilter
+ProcessImage();
+DisplayImage();
+
+
+function MeanFilterSize_Callback(hObject, eventdata, handles)
+% hObject    handle to MeanFilterSize (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of MeanFilterSize as text
+%        str2double(get(hObject,'String')) returns contents of MeanFilterSize as a double
+ProcessImage();
+DisplayImage();
+
+
+% --- Executes during object creation, after setting all properties.
+function MeanFilterSize_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to MeanFilterSize (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in AdujstRange.
+function AdujstRange_Callback(hObject, eventdata, handles)
+% hObject    handle to AdujstRange (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of AdujstRange
+ProcessImage();
+DisplayImage();
+
+
+% --- Executes on button press in SelectSubRegion.
+function SelectSubRegion_Callback(hObject, eventdata, handles)
+% hObject    handle to SelectSubRegion (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of SelectSubRegion
+if (get(handles.SelectSubRegion,'Value')==1)
+    DisplayImage();
+    handles=guidata(hObject);
+
+    figure(handles.hFigImageMotCorr);
+    hROI = imrect;
+    handles.SubRegMotCorr=getPosition(hROI);   
+    guidata(hObject,handles);
+
+    ProcessImage();
+    DisplayImage();
+else
+    ProcessImage();
+    DisplayImage();
+end
+
+
+function TopValueRange_Callback(hObject, eventdata, handles)
+% hObject    handle to TopValueRange (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of TopValueRange as text
+%        str2double(get(hObject,'String')) returns contents of TopValueRange as a double
+ProcessImage();
+DisplayImage();
+
+
+% --- Executes during object creation, after setting all properties.
+function TopValueRange_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to TopValueRange (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+function BottomValueRange_Callback(hObject, eventdata, handles)
+% hObject    handle to BottomValueRange (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of BottomValueRange as text
+%        str2double(get(hObject,'String')) returns contents of BottomValueRange as a double
+ProcessImage();
+DisplayImage();
+
+
+% --- Executes during object creation, after setting all properties.
+function BottomValueRange_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to BottomValueRange (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+function RefFrameNumber_Callback(hObject, eventdata, handles)
+% hObject    handle to RefFrameNumber (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of RefFrameNumber as text
+%        str2double(get(hObject,'String')) returns contents of RefFrameNumber as a double
+ProcessImage();
+DisplayImage();
+
+
+% --- Executes during object creation, after setting all properties.
+function RefFrameNumber_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to RefFrameNumber (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in FitRefHist.
+function FitRefHist_Callback(hObject, eventdata, handles)
+% hObject    handle to FitRefHist (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of FitRefHist
+ProcessImage();
+DisplayImage();
+
+
+% --- Executes on button press in ApplyApps.
+function ApplyApps_Callback(hObject, eventdata, handles)
+% hObject    handle to ApplyApps (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global SpikeMovieData;
+
+CurrentMovie=get(handles.MovieSelector,'Value');
+
+% waitbar is consuming too much ressources, so I divide its access
+dividerWaitBar=10^(floor(log10(SpikeMovieData(CurrentMovie).DataSize(3)))-1);
+
+h=waitbar(0,'Apply dft motion correction on pictures ...');
+
+MaxFrame=SpikeMovieData(CurrentMovie).DataSize(3);
+MatrixMotCorrDispl=zeros(2,MaxFrame);
+
+RefPic=SpikeMovieData(CurrentMovie).currentMovie(:,:,str2num(get(handles.RefFrameNumber,'String')));
+RefPic=SinglePicProcess(RefPic,handles);
+for i=1:MaxFrame
+    ToAlign=SpikeMovieData(CurrentMovie).currentMovie(:,:,i);
+    ToAlign=SinglePicProcess(ToAlign,handles);
+    output = dftregistration(fft2(double(ToAlign)),fft2(double(RefPic)),200);
+    xform=[1 0 0;0 1 0;-output(4) -output(3) 1];
+    MatrixMotCorrDispl(:,i)=[-output(4) -output(3)];
+    tform=maketform('affine',double(xform));
+    SpikeMovieData(CurrentMovie).currentMovie(:,:,i)=imtransform(SpikeMovieData(CurrentMovie).currentMovie(:,:,i),tform,'nearest' ,'XData',...
+        [1 SpikeMovieData(CurrentMovie).DataSize(2)],'YData',[1 SpikeMovieData(CurrentMovie).DataSize(1)],'FillValues',0);
+    
+    if (round(i/dividerWaitBar)==i/dividerWaitBar)
+        waitbar(i/SpikeMovieData(CurrentMovie).DataSize(3),h);
+    end
+end
+close(h);
+
+if (get(handles.DisplMotion,'Value')==1)
+    if isfield(handles,'hFigMotDispl')
+        if ishandle(handles.hFigMotDispl)
+            figure(handles.hFigMotDispl);
+        else
+            handles.hFigMotDispl=figure('Name','Motion correction displacement','NumberTitle','off');
+        end
+    else
+        handles.hFigMotDispl=figure('Name','Motion correction displacement','NumberTitle','off');
+    end
+    plot(1:MaxFrame,squeeze(MatrixMotCorrDispl(1,:)),1:MaxFrame,squeeze(MatrixMotCorrDispl(2,:)));
+end
+guidata(gcbo,handles);
+
+
+% --- Executes on button press in DisplMotion.
+function DisplMotion_Callback(hObject, eventdata, handles)
+% hObject    handle to DisplMotion (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of DisplMotion

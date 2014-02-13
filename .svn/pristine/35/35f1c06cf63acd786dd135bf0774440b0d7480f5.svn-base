@@ -1,0 +1,28 @@
+% This function is to initialize (or re-initialize) the data that are
+% shared between functions and with Apps
+function InitTraces()
+
+% SpikeTraceData is shared with all Apps
+% it is a structure that gather all datas
+% SpikeTraceData can be repeated along its first dimensions 
+% Each element will be one Trace.
+global SpikeTraceData;
+
+SpikeTraceData=struct('Path',{},'Filename',{},'Trace',{},...
+    'DataSize',{},'XVector',{},'Label',struct('ListText',{},'XLabel',{},'YLabel',{}));
+
+% Filename and Path store the path to the original file from which the data is coming from
+
+% Trace is the actual data in its current state. Size is T where 
+% T is number of values in Trace. T can be along time or along any other
+% dimension of interest.
+
+% DataSize store the size of Trace
+% Size is 1
+
+% XVector store the X values corresponding to the trace value. It is often
+% time but can also be any other interesting dimension. Make sure that the
+% XLabel match your dimension.
+% Size is T
+
+% Label store the text values associated with various labelling text

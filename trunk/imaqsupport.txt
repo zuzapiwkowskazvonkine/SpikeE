@@ -1,0 +1,66 @@
+-------------------------------------------------------------------------------------
+MATLAB Version 7.12.0.635 (R2011a)
+MATLAB License Number: 161052
+Operating System: Microsoft Windows 7 Version 6.1 (Build 7601: Service Pack 1)
+Java VM Version: Java 1.6.0_17-b04 with Sun Microsystems Inc. Java HotSpot(TM) 64-Bit Server VM mixed mode
+-------------------------------------------------------------------------------------
+Image Acquisition Toolbox                             Version 4.1        (R2011a)
+
+----------DATE/TIME----------
+
+10-Dec-2013 14:11:10
+
+
+----------DIRECTX----------
+
+DirectX Version: 10.0
+
+
+----------AVAILABLE HARDWARE----------
+
+    InstalledAdaptors: {'gige'  'matrox'  'winvideo'}
+        MATLABVersion: '7.12 (R2011a)'
+          ToolboxName: 'Image Acquisition Toolbox'
+       ToolboxVersion: '4.1 (R2011a)'
+
+
+----------THIRD PARTY ADAPTORS REGISTERED WITH IMAQREGISTER----------
+
+
+ans = 
+
+   Empty cell array: 0-by-1
+
+
+----------GIGE ADAPTOR----------
+
+Adaptor Name: gige
+Adaptor DLL: C:\Program Files\MATLAB\R2011a\toolbox\imaq\imaqadaptors\win64\mwgigeimaq.dll
+
+IMAQHWINFO: 
+       AdaptorDllName: [1x77 char]
+    AdaptorDllVersion: '4.1 (R2011a)'
+          AdaptorName: 'gige'
+            DeviceIDs: {1x0 cell}
+           DeviceInfo: [1x0 struct]
+
+
+Available Devices: 
+
+----------MATROX ADAPTOR----------
+
+Adaptor Name: matrox
+Adaptor DLL: C:\Program Files\MATLAB\R2011a\toolbox\imaq\imaqadaptors\win64\mwmatroximaq.dll
+
+IMAQHWINFO: 
+       AdaptorDllName: [1x79 char]
+    AdaptorDllVersion: '4.1 (R2011a)'
+          AdaptorName: 'matrox'
+            DeviceIDs: {1x0 cell}
+           DeviceInfo: [1x0 struct]
+
+
+Available Devices: 
+
+----------WINVIDEO ADAPTOR----------
+

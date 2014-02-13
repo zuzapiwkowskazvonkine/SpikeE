@@ -1,0 +1,79 @@
+% This function is to initialize (or re-initialize) the data that are
+% shared between functions and with Apps
+function InitMovies()
+
+% Spike Data is shared with all Apps
+% it is a structure that gather all datas
+% SpikeMovieData can be repeated along its first dimensions 
+% Each element will be one movie.
+global SpikeMovieData;
+
+if isfield(SpikeMovieData,'currentPath')
+    if ~isempty(SpikeMovieData)
+        KeepPath=SpikeMovieData(1).currentPath;
+    else
+        KeepPath=[];
+    end
+else
+    KeepPath=[];
+end
+SpikeMovieData=[];
+
+% currentFilename and currentPath store the path to the file that is being
+% analysed. This will also evolve with batch mode to an array
+% We keep currentPath if it is available
+if ~isempty(KeepPath);
+    SpikeMovieData(1).currentPath=KeepPath;
+else
+    SpikeMovieData(1).currentPath=[];
+end
+SpikeMovieData(1).currentFilename=[];
+
+% currentMovie is the fluorescence data in its current state. It can be
+% modified by all Apps. Size is MxNxCxT where 
+% M horizontal pixels
+% N vertical pixels
+% T Time frames
+SpikeMovieData(1).currentMovie=[];
+
+% DataSize store the size of currentMovie
+% Size is 4
+SpikeMovieData(1).DataSize=[];
+
+% TimeFrame store the time at which all frame have been acquired in
+% seconds. This is the average time for each frame. 
+% Size is T
+SpikeMovieData(1).TimeFrame=[];
+
+% TimePixel store the time at which pixel is acquired relative to TimeFrame
+% values (ie it can be negative or positive if pixel is acquired before or
+% after the TimeFrame value). 
+% Size is MxNxT
+SpikeMovieData(1).TimePixel=[];
+
+% For memory reduction TimePixel is usually an integer. The precise type
+% will depend on the movie loader.
+% TimePixelUnits store the conversion ratio to bring it into seconds.
+% Size is 1
+SpikeMovieData(1).TimePixelUnits=[];
+
+% SpikeMovieData.DwellTime is an array that store the dwell time for each pixel
+% in s
+% Size is MxN
+SpikeMovieData(1).DwellTime=[];
+
+% Xposition, Yposition and Zposition are space matrix. They store the
+% actual position in space of all pixels. Each Movie has its own position
+% matrix
+% Size is MxN
+SpikeMovieData(1).Xposition=[];
+SpikeMovieData(1).Yposition=[];
+SpikeMovieData(1).Zposition=[];
+
+
+% Label store the text values associated with the labelling text for each
+% axes
+SpikeMovieData(1).Label.XLabel='';
+SpikeMovieData(1).Label.YLabel='';
+SpikeMovieData(1).Label.ZLabel='';
+SpikeMovieData(1).Label.CLabel='';
