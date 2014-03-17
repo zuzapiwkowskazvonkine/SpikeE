@@ -167,11 +167,17 @@ firsttimept=0;
 h=waitbar(0,'Stitching traces...');
 for k=TracesToApply
   
+     if SpikeTraceData(k).XVector(1)==0
+        deltaX=SpikeTraceData(k).XVector(2)-SpikeTraceData(k).XVector(1) %need to add 1 dx at the beginning to the XVector trace
+    else
+        deltaX=0; %assuming SpikeTraceData(k).XVector starts at 1 dx.
+    end
+    
     addend=SpikeTraceData(k).DataSize;  
-    SpikeTraceData(BeginTrace).Trace(newend+1:newend+addend,1)=SpikeTraceData(k).Trace(1:addend,1); 
-    SpikeTraceData(BeginTrace).XVector(newend+1:newend+addend,1)=firsttimept+SpikeTraceData(k).XVector(1:addend,1); %assuming SpikeTraceData(k).XVector starts at 1 dx.
+    SpikeTraceData(BeginTrace).Trace(newend+1:newend+addend)=SpikeTraceData(k).Trace(1:addend); 
+    SpikeTraceData(BeginTrace).XVector(newend+1:newend+addend)=firsttimept+SpikeTraceData(k).XVector(1:addend); %assuming SpikeTraceData(k).XVector starts at 1 dx.
     newend=newend+SpikeTraceData(k).DataSize;
-    firsttimept=SpikeTraceData(BeginTrace).XVector(newend,1);
+    firsttimept=SpikeTraceData(BeginTrace).XVector(newend);
    
     % if chosen in gui delete trace after adding: not implemented yet
     
