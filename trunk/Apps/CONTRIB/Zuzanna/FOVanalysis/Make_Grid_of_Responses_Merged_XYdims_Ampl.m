@@ -205,8 +205,6 @@ Settings.FOVYlocTraceValue=get(handles.FOVYlocTrace,'Value');
 Settings.SFXString=get(handles.SFX,'String');
 Settings.SFYString=get(handles.SFY,'String');
 
-Settings.TraceStimDursString=get(handles.TraceStimDurs,'String');
-Settings.TraceStimDursValue=get(handles.TraceStimDurs,'Value');
 
 
 Settings.YsizetargetString= get(handles.Ysizetarget,'String');
@@ -402,7 +400,7 @@ for z=1:length(SpikeTraceData(nbtracestrace).Trace) % loop over Files (ie groups
         if int==oldint
             
             %accumulate data to plot in Arrays
-            FOVimageArray{end+1}=SpikeImageData(im).Image;
+            FOVimageArray{end+1}=flipdim(SpikeImageData(im).Image,1); %%%%%%%
             Coords2p_Array{end+1}=Coords_2p;
             
             if length(xs)>0
@@ -441,6 +439,7 @@ for z=1:length(SpikeTraceData(nbtracestrace).Trace) % loop over Files (ie groups
                 % plot that mean FOV image on new fig p
                 p=figure;
                 imagesc(meanFOV);
+%                 set(gca,'YDir','normal');
                 axis equal;
                 hold on;
                 
@@ -494,6 +493,7 @@ for z=1:length(SpikeTraceData(nbtracestrace).Trace) % loop over Files (ie groups
                 % plot that mean FOV image on new fig p
                 p=figure;
                 imagesc(meanFOV);
+%                 set(gca,'YDir','normal');
                 axis equal;
                 hold on;
                 
@@ -526,7 +526,7 @@ for z=1:length(SpikeTraceData(nbtracestrace).Trace) % loop over Files (ie groups
             
             % fill Arrays{1}
             
-            FOVimageArray{end+1}=SpikeImageData(im).Image;
+            FOVimageArray{end+1}=flipdim(SpikeImageData(im).Image,1);
             Coords2p_Array{end+1}=Coords_2p;
             
             if length(xs)>0
@@ -566,6 +566,7 @@ for z=1:length(SpikeTraceData(nbtracestrace).Trace) % loop over Files (ie groups
                 % plot that mean FOV image on new fig p
                 p=figure;
                 imagesc(meanFOV);
+%                 set(gca,'YDir','normal');
                 axis equal;
                 hold on;
                 

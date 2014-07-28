@@ -221,8 +221,13 @@ NumberCaseY=min(heightscreen,max(1,NumberCaseY));
 LeftMatrix=0:PixelCaseWidth:widthscreen;
 TopMatrix=0:PixelCaseHeight:heightscreen;
 
+% randomization:
 KeptIndices=randperm(NumberCaseX*NumberCaseY);
 [XCoord,YCoord]=ind2sub([NumberCaseX,NumberCaseY],KeptIndices);
+
+%undo randomization:
+XCoord=sort(XCoord)
+YCoord=sort(YCoord)
 
 % XCoord=1:1:length(LeftMatrix);
 % XCoord=repmat(XCoord,1,length(XCoord));
@@ -279,6 +284,9 @@ for i=1:2:7
     axis([min(min(coords))-10 max(max(coords))+10 min(min(coords))-10 max(max(coords))+10])
 end
 
+% plot top left corner in red:
+plot(coords(1,1),coords(2,1),'r.')
+
 function plot_grid_on_image(coords,img)
 % figure;
 % imagesc(img);
@@ -292,7 +300,8 @@ function plot_grid_on_image(coords,img)
 
 %same but with lines instead of dots:
 figure;
-imagesc(img);
+imagesc(flipdim(img,1));
+% set(gca,'YDir','normal');
 axis equal;
 hold on;
 
@@ -305,8 +314,19 @@ for k=1:size(coords,2)
     hold on
     plot([coords(6,k) coords(2,k)],[coords(5,k) coords(1,k)],'w'); % BL -> TL corners
     hold on  
+
+%  plot([coords(1,k) coords(3,k)],[coords(2,k) coords(4,k)],'w'); % line between TL and TR corners 
+%     hold on
+%     plot([coords(7,k) coords(3,k)],[coords(8,k) coords(4,k)],'w'); % BR -> TR corners
+%     hold on
+%     plot([coords(5,k) coords(7,k)],[coords(6,k) coords(8,k)],'w'); % BL-> BR corners
+%     hold on
+%     plot([coords(5,k) coords(1,k)],[coords(6,k) coords(2,k)],'w'); % BL -> TL corners
+%     hold on 
 end
 
+% plot top left corner in red:
+plot(coords(2,1),coords(1,1),'r.') % X as a function of Y
 
 
 % --- Executes on button press in ValidateValues.
