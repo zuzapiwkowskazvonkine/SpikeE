@@ -409,7 +409,9 @@ fig=figure;
 else
     figure(fig);
 end
-imagesc(img);
+
+imagesc(flipdim(img,1));
+% set(gca,'YDir','normal');
 axis equal;
 hold on;
 

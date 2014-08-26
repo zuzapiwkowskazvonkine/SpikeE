@@ -356,7 +356,7 @@ for z=1:length(SpikeTraceData(nbtracestrace).Trace) % loop over Files (ie groups
         if int==oldint
             
             %accumulate data to plot in Arrays
-            FOVimageArray{end+1}=SpikeImageData(im).Image;
+            FOVimageArray{end+1}=flipdim(SpikeImageData(im).Image,1);
             Coords2p_Array{end+1}=Coords_2p;
             if length(xs)>0
                 CoordsSign2p_Array{end+1}=Coords_Sign_2p;
@@ -473,8 +473,7 @@ for z=1:length(SpikeTraceData(nbtracestrace).Trace) % loop over Files (ie groups
             Yshift=[];
             
             % fill Arrays{1}
-            
-            FOVimageArray{end+1}=SpikeImageData(im).Image;
+            FOVimageArray{end+1}=flipdim(SpikeImageData(im).Image,1);
             Coords2p_Array{end+1}=Coords_2p;
             if length(xs)>0
                 CoordsSign2p_Array{end+1}=Coords_Sign_2p;
