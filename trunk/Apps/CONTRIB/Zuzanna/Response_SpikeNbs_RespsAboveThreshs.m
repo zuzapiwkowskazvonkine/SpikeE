@@ -450,7 +450,7 @@ for i=1:length(cells)
                 startsign=1;
             end
             
-            if nbbase==2
+            if (nbbase==2)||(length(SpikeTraceData(infotraces(end)).Trace)>1)
                 base=SpikeTraceData(infotraces(end)).Trace(psthorder); % baseline rate in Hz for this PSTH
             end
             

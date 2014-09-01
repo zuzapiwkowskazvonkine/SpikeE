@@ -62,11 +62,11 @@ handles.output = hObject;
 
 global SpikeTraceData;
 
-    set(handles.PathForLoading,'String','C:\Users\Zuzanna\Documents\DataStanford2008-2012\ephys_data\Surprise_Spont_Ai35_DCN\Analysis_Windows');
-    handles.Path='C:\Users\Zuzanna\Documents\DataStanford2008-2012\ephys_data\Surprise_Spont_Ai35_DCN\Analysis_Windows';
+    set(handles.PathForLoading,'String','C:\Users\Zuzanna\Documents\DataStanford2013');
+    handles.Path='C:\Users\Zuzanna\Documents\DataStanford2013';
     
-    set(handles.PathForLoadingPSTHs,'String','C:\Users\Zuzanna\Documents\DataStanford2008-2012\ephys_data\Surprise_Spont_Ai35_DCN\PSTHs');
-    handles.Path2='C:\Users\Zuzanna\Documents\DataStanford2008-2012\ephys_data\Surprise_Spont_Ai35_DCN\PSTHs';
+    set(handles.PathForLoadingPSTHs,'String','C:\Users\Zuzanna\Documents\DataStanford2013');
+    handles.Path2='C:\Users\Zuzanna\Documents\DataStanford2013';
 
 if (length(varargin)>1)
     Settings=varargin{2};
@@ -153,6 +153,7 @@ end
 
 for i=1:length(cells)
     InitTraces();
+    cells(i).name
     psthfile=[handles.Path2 '\' cells(i).name '_psths.mat'];
     infofile=[handles.Path2 '\' cells(i).name '_info.mat'];
     if posresp
@@ -291,6 +292,8 @@ for i=1:length(cells)
             
             if (nbbase==2)||(length(SpikeTraceData(infotraces(end)).Trace)>1)
                 base=SpikeTraceData(infotraces(end)).Trace(psthorder); % baseline rate in Hz for this PSTH
+           
+            
             end
             
             if sechalf
@@ -314,6 +317,8 @@ for i=1:length(cells)
             
             trialnb=SpikeTraceData(infotraces(end-nbbase)).Trace(psthorder);             % MAKE SURE TRIAL NB IS nbbase BEFORE LAST IN  INFOTRACES
             base1ms=base*0.001*burstnb*trialnb; % baseline nb of spikes in 1ms bin
+           
+            
             
             if startresp>0
                 for z=startresp:stopresp
@@ -393,8 +398,12 @@ for i=1:length(cells)
                 startsign=1;
             end
             
-            if nbbase==2
+            if (nbbase==2)||(length(SpikeTraceData(infotraces(end)).Trace)>1)
                 base=SpikeTraceData(infotraces(end)).Trace(psthorder); % baseline rate in Hz for this PSTH
+            end
+            
+             if k==psthtraces(1)
+                base
             end
             
             if commonwindow==0
@@ -412,6 +421,10 @@ for i=1:length(cells)
             
             trialnb=SpikeTraceData(infotraces(end-nbbase)).Trace(psthorder);             % % MAKE SURE TRIAL NB IS nbbase BEFORE LAST IN  INFOTRACES
             base1ms=base*0.001*burstnb*trialnb; % baseline nb of spikes in 1ms bin
+            
+             if k==psthtraces(1)
+                base1ms
+            end
             
             if startresp>0
                 for z=startresp:stopresp
