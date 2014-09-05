@@ -91,7 +91,7 @@ if (length(varargin)>1)
   
 end
 
-handles.Path='C:\Users\Zuzanna\Documents\DataStanford2008-2012\ephys_data\Surprise_Ai27_Pje\PSTHs';
+handles.Path='C:\Users\Zuzanna\Documents\DataStanford2013\Analysis\Surprise_DCN_SU_subset\PSTHs';
 
 if ~isempty(SpikeTraceData)
     for i=1:length(SpikeTraceData)

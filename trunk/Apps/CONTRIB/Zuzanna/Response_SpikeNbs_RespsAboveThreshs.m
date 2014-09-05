@@ -22,7 +22,7 @@ function varargout = Response_SpikeNbs_RespsAboveThreshs(varargin)
 
 % Edit the above text to modify the response to help Response_SpikeNbs_RespsAboveThreshs
 
-% Last Modified by GUIDE v2.5 26-Mar-2013 11:34:17
+% Last Modified by GUIDE v2.5 01-Sep-2014 17:15:27
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -86,6 +86,9 @@ if (length(varargin)>1)
     set(handles.Thresh1,'String',Settings.Thresh1String);
     set(handles.Thresh2,'String',Settings.Thresh2String);
     set(handles.Thresh3,'String',Settings.Thresh3String);
+    set(handles.Thresh1n,'String',Settings.Thresh1nString);
+    set(handles.Thresh2n,'String',Settings.Thresh2nString);
+    set(handles.Thresh3n,'String',Settings.Thresh3nString);
 end
 
 % Update handles structure
@@ -120,6 +123,9 @@ Settings.Analyze2ndHalfValue=get(handles.Analyze2ndHalf,'Value');
 Settings.Thresh1String=get(handles.Thresh1,'String');
 Settings.Thresh2String=get(handles.Thresh2,'String');
 Settings.Thresh3String=get(handles.Thresh3,'String');
+Settings.Thresh1nString=get(handles.Thresh1n,'String');
+Settings.Thresh2nString=get(handles.Thresh2n,'String');
+Settings.Thresh3nString=get(handles.Thresh3n,'String');
 
 % --- Executes on button press in ApplyApps.
 function ApplyApps_Callback(hObject, eventdata, handles)
@@ -144,6 +150,10 @@ nbfiles=length(allfiles);
 thresh1=str2num(get(handles.Thresh1,'String'));
 thresh2=str2num(get(handles.Thresh2,'String'));
 thresh3=str2num(get(handles.Thresh3,'String'));
+
+thresh1n=str2num(get(handles.Thresh1n,'String'));
+thresh2n=str2num(get(handles.Thresh2n,'String'));
+thresh3n=str2num(get(handles.Thresh3n,'String'));
 
 
 global cells %put in cells the base names for the different files present in PSTHs folder
@@ -293,7 +303,7 @@ for i=1:length(cells)
         thresh1responses=zeros(1,length(psthtraces));
         thresh2responses=zeros(1,length(psthtraces));
         thresh3responses=zeros(1,length(psthtraces));
-        
+       
         if commonwindow 
             startresp=SpikeTraceData(poswintrace).Trace(1);
             stopresp=SpikeTraceData(poswintrace).Trace(2);
@@ -345,7 +355,6 @@ for i=1:length(cells)
             posresponses(psthorder)=0;
             end
          
-          
             % 3 vecs saying if the response amplitude is above each of the 3
             % thresholds (Thresh1,2,3)
             if posresponses(psthorder)>thresh1
@@ -419,7 +428,7 @@ for i=1:length(cells)
         SpikeTraceData(BeginTrace).Label.XLabel='';
         SpikeTraceData(BeginTrace).Filename=SpikeTraceData(k).Filename;
         SpikeTraceData(BeginTrace).Path=SpikeTraceData(k).Path;   
-        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %save results (ie last 5 SpikeTraceData)
         
         OldData=SpikeTraceData;
@@ -434,6 +443,9 @@ for i=1:length(cells)
     
         negresponses=zeros(1,length(psthtraces));
         signnegresponses=zeros(1,length(psthtraces));
+        thresh1nresponses=zeros(1,length(psthtraces));
+        thresh2nresponses=zeros(1,length(psthtraces));
+        thresh3nresponses=zeros(1,length(psthtraces));
         
         if commonwindow
             startresp=SpikeTraceData(negwintrace).Trace(1);
@@ -481,6 +493,18 @@ for i=1:length(cells)
             end
             negresponses(psthorder)=tot/(burstnb*trialnb); %avg. resp. in spike number above baseline per trial and per single stimulus
             
+            % 3 vecs saying if the response amplitude is above each of the 3
+            % thresholds (Thresh1n,2n,3n)
+            if negresponses(psthorder)>thresh1n
+                thresh1nresponses(psthorder)=1;
+            end
+            if negresponses(psthorder)>thresh2n
+                thresh2nresponses(psthorder)=1;
+            end
+            if negresponses(psthorder)>thresh3n
+                thresh3nresponses(psthorder)=1;
+            end
+            
             % also have a vec saying whether there is a significant
             % response or not, based on negsigntraces
             
@@ -510,12 +534,42 @@ for i=1:length(cells)
         SpikeTraceData(BeginTrace).Label.YLabel='1/0';
         SpikeTraceData(BeginTrace).Label.XLabel='';
         SpikeTraceData(BeginTrace).Filename=SpikeTraceData(k).Filename;
-        SpikeTraceData(BeginTrace).Path=SpikeTraceData(k).Path;    
+        SpikeTraceData(BeginTrace).Path=SpikeTraceData(k).Path;   
         
-        %save results (ie last 2 SpikeTraceData)
+        BeginTrace=length(SpikeTraceData)+1;
+        SpikeTraceData(BeginTrace).XVector=1:length(thresh1nresponses);
+        SpikeTraceData(BeginTrace).Trace=thresh1nresponses;
+        SpikeTraceData(BeginTrace).DataSize=length(thresh1responses);
+        SpikeTraceData(BeginTrace).Label.ListText=['Yes/No negative resp. >' num2str(thresh1n)];
+        SpikeTraceData(BeginTrace).Label.YLabel='1/0';
+        SpikeTraceData(BeginTrace).Label.XLabel='';
+        SpikeTraceData(BeginTrace).Filename=SpikeTraceData(k).Filename;
+        SpikeTraceData(BeginTrace).Path=SpikeTraceData(k).Path;   
+        
+        BeginTrace=length(SpikeTraceData)+1;
+        SpikeTraceData(BeginTrace).XVector=1:length(thresh2nresponses);
+        SpikeTraceData(BeginTrace).Trace=thresh2nresponses;
+        SpikeTraceData(BeginTrace).DataSize=length(thresh2nresponses);
+        SpikeTraceData(BeginTrace).Label.ListText=['Yes/No negative resp. >' num2str(thresh2n)];
+        SpikeTraceData(BeginTrace).Label.YLabel='1/0';
+        SpikeTraceData(BeginTrace).Label.XLabel='';
+        SpikeTraceData(BeginTrace).Filename=SpikeTraceData(k).Filename;
+        SpikeTraceData(BeginTrace).Path=SpikeTraceData(k).Path;   
+        
+        BeginTrace=length(SpikeTraceData)+1;
+        SpikeTraceData(BeginTrace).XVector=1:length(thresh3nresponses);
+        SpikeTraceData(BeginTrace).Trace=thresh3nresponses;
+        SpikeTraceData(BeginTrace).DataSize=length(thresh3nresponses);
+        SpikeTraceData(BeginTrace).Label.ListText=['Yes/No negative resp. >' num2str(thresh3n)];
+        SpikeTraceData(BeginTrace).Label.YLabel='1/0';
+        SpikeTraceData(BeginTrace).Label.XLabel='';
+        SpikeTraceData(BeginTrace).Filename=SpikeTraceData(k).Filename;
+        SpikeTraceData(BeginTrace).Path=SpikeTraceData(k).Path; 
+        
+        %save results (ie last 5 SpikeTraceData)
         
         OldData=SpikeTraceData;
-        SpikeTraceData=SpikeTraceData(end-1:end);
+        SpikeTraceData=SpikeTraceData(end-4:end);
         savefile=[handles.Path2 '\' cells(i).name '_NegSpikenbResp.mat'];
         save(savefile,'SpikeTraceData');
         SpikeTraceData=OldData;
@@ -736,6 +790,75 @@ function Thresh3_Callback(hObject, eventdata, handles)
 % --- Executes during object creation, after setting all properties.
 function Thresh3_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to Thresh3 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function Thresh1n_Callback(hObject, eventdata, handles)
+% hObject    handle to Thresh1n (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of Thresh1n as text
+%        str2double(get(hObject,'String')) returns contents of Thresh1n as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function Thresh1n_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to Thresh1n (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function Thresh2n_Callback(hObject, eventdata, handles)
+% hObject    handle to Thresh2n (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of Thresh2n as text
+%        str2double(get(hObject,'String')) returns contents of Thresh2n as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function Thresh2n_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to Thresh2n (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function Thresh3n_Callback(hObject, eventdata, handles)
+% hObject    handle to Thresh3n (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of Thresh3n as text
+%        str2double(get(hObject,'String')) returns contents of Thresh3n as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function Thresh3n_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to Thresh3n (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
