@@ -66,8 +66,8 @@ global SpikeTraceData;
 
 if (length(varargin)>1)
     Settings=varargin{2};
-    %     set(handles.TraceSelector,'String',Settings.TraceSelectorString);
-%     set(handles.TraceSelector,'Value',Settings.TraceSelectorValue);
+    set(handles.TraceSelector,'String',Settings.TraceSelectorString);
+    set(handles.TraceSelector,'Value',Settings.TraceSelectorValue);
     set(handles.CrossType,'String',Settings.CrossTypeString);
     set(handles.CrossType,'Value',Settings.CrossTypeValue);
     set(handles.Threshold,'String',Settings.ThresholdString);

@@ -1,0 +1,69 @@
+function [tr_loomfront,tr_loomup] = sort_loom(tr_loomtimes,tr_loompos)
+
+%tr_loomtimes: num of trace in SpikeTraceData with start times (non-digitized) of all looming stimuli (obtained by thresholding loom diam) 
+%tr_loompos: num of trace in SpikeTraceData with the value of the looming stimulus position
+
+%Zuzanna Piwkowska 19/10/2017
+
+global SpikeTraceData
+
+BeginTrace=length(SpikeTraceData)+1;
+
+tr_loomfront=BeginTrace;
+SpikeTraceData(BeginTrace).Trace=SpikeTraceData(tr_loomtimes).Trace;
+SpikeTraceData(BeginTrace).XVector=SpikeTraceData(tr_loomtimes).XVector;
+SpikeTraceData(BeginTrace).DataSize=SpikeTraceData(tr_loomtimes).DataSize;
+SpikeTraceData(BeginTrace).Label.ListText='Loom Front';
+SpikeTraceData(BeginTrace).Label.YLabel='Loom Front binned';
+SpikeTraceData(BeginTrace).Label.XLabel=SpikeTraceData(tr_loomtimes).Label.XLabel;
+SpikeTraceData(BeginTrace).Filename=SpikeTraceData(tr_loomtimes).Filename;
+SpikeTraceData(BeginTrace).Path=SpikeTraceData(tr_loomtimes).Path;
+
+BeginTrace=length(SpikeTraceData)+1;
+
+tr_loomup=BeginTrace;
+SpikeTraceData(BeginTrace).Trace=SpikeTraceData(tr_loomtimes).Trace;
+SpikeTraceData(BeginTrace).XVector=SpikeTraceData(tr_loomtimes).XVector;
+SpikeTraceData(BeginTrace).DataSize=SpikeTraceData(tr_loomtimes).DataSize;
+SpikeTraceData(BeginTrace).Label.ListText='Loom Up';
+SpikeTraceData(BeginTrace).Label.YLabel='Loom Up binned';
+SpikeTraceData(BeginTrace).Label.XLabel=SpikeTraceData(tr_loomtimes).Label.XLabel;
+SpikeTraceData(BeginTrace).Filename=SpikeTraceData(tr_loomtimes).Filename;
+SpikeTraceData(BeginTrace).Path=SpikeTraceData(tr_loomtimes).Path;
+
+del=2;  %nb of delay points (after the onset of looming stim) to look for loompos data (sampling every 100ms, 2 is 200ms)
+frontval=-15; %vert pos for lomming stimuli in the front
+upval=90; %vert pos for lomming stimuli up (above mouse)
+th=(frontval+upval)/2;
+
+i=length(SpikeTraceData(tr_loomtimes).Trace)
+%looping from the end for easier point removal
+while i>0
+
+    t=SpikeTraceData(tr_loomtimes).XVector(i)
+    
+    % this below does not work because the time steps in tr_loompos are
+    % irregular, not all exactly equal to dt
+    %     dt=SpikeTraceData(tr_loompos).XVector(2)-SpikeTraceData(tr_loompos).XVector(1)
+    %     x=ceil(t/dt)
+    
+    x=find(SpikeTraceData(tr_loompos).XVector==t)
+    
+    if SpikeTraceData(tr_loompos).Trace(x+del)>th %up stimulus
+
+        SpikeTraceData(tr_loomfront).XVector(i)=[]; %remove stim from 'front' list
+        SpikeTraceData(tr_loomfront).Trace(i)=[];
+        SpikeTraceData(tr_loomfront).DataSize=SpikeTraceData(tr_loomfront).DataSize-1;
+        
+    else %front stimulus
+        
+        SpikeTraceData(tr_loomup).XVector(i)=[]; %remove stim from 'up' list
+        SpikeTraceData(tr_loomup).Trace(i)=[];
+        SpikeTraceData(tr_loomup).DataSize=SpikeTraceData(tr_loomup).DataSize-1;
+        
+    end
+i=i-1;
+end
+
+
+

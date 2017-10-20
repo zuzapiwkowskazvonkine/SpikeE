@@ -1,0 +1,24 @@
+function 
+
+prewin=1; %s
+postwin=1; %s
+deltat=SpikeTraceData(10).XVector(2)-SpikeTraceData(10).XVector(1);
+sum=zeros(1,ceil((prewin+postwin)/deltat));
+size(sum)
+
+for i=1:length(SpikeTraceData(14).Trace)
+    
+    startt=SpikeTraceData(14).XVector(i)-prewin;
+    stopt=SpikeTraceData(14).XVector(i)+postwin;
+    
+    startx=ceil(startt/deltat);
+    stopx=ceil(stopt/deltat);
+    tot=stopx-startx+1;
+    
+    sum=sum+abs(SpikeTraceData(10).Trace(startx:stopx));
+     
+end
+
+avg2=sum/length(SpikeTraceData(14).Trace);
+figure
+plot(avg2)

@@ -72,7 +72,6 @@ if (length(varargin)>1)
     set(handles.CrossType,'Value',Settings.CrossTypeValue);
     set(handles.Threshold,'String',Settings.ThresholdString);
     set(handles.EarlyStop,'String',Settings.EarlyStopString);
-    set(handles.MinimalInt,'String',Settings.MinimalInt);
        
 end
 
@@ -106,7 +105,6 @@ Settings.CrossTypeString=get(handles.CrossType,'String');
 Settings.CrossTypeValue=get(handles.CrossType,'Value');
 Settings.ThresholdString=get(handles.Threshold,'String');
 Settings.EarlyStopString=get(handles.EarlyStop,'String');
-Settings.MinimalInt=get(handles.MinimalInt,'String');
 
 
 % --- Executes on button press in ApplyApps.
@@ -128,7 +126,7 @@ thresh=str2double(get(handles.Threshold,'String'));
 CrossTypeContents=cellstr(get(handles.CrossType, 'String'));
 CrossType=CrossTypeContents{get(handles.CrossType, 'Value')};
 earlystop=str2double(get(handles.EarlyStop,'String'));
-mi=str2double(get(handles.MinimalInt,'String'));
+mi=str2double(get(handles.Threshold,'String'));
 
  if strcmp(CrossType, 'low-to-high')
  lowhigh=1;

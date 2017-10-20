@@ -65,8 +65,8 @@ global SpikeTraceData;
 
 if (length(varargin)>1)
     Settings=varargin{2};
-%   set(handles.TraceSelector,'String',Settings.TraceSelectorString);
-%   set(handles.TraceSelector,'Value',Settings.TraceSelectorValue);
+    set(handles.TraceSelector,'String',Settings.TraceSelectorString);
+    set(handles.TraceSelector,'Value',Settings.TraceSelectorValue);
     set(handles.FilterType,'String',Settings.FilterTypeString);
     set(handles.FilterType,'Value',Settings.FilterTypeValue);
     set(handles.LowCutOff,'String',Settings.LowCutOffString);
@@ -78,7 +78,7 @@ end
 TextTrace{1}='All Traces';
 if ~isempty(SpikeTraceData)
     for i=1:length(SpikeTraceData)
-        TextTrace{i+1}=['Trace ',num2str(i)];
+        TextTrace{i+1}=[num2str(i),' - ',SpikeTraceData(i).Label.ListText];
     end
     set(handles.TraceSelector,'String',TextTrace);
 end
