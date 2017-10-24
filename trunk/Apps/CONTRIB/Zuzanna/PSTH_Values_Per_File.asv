@@ -145,19 +145,12 @@ for k=TracesToCompact
     for j=1:length(SpikeTraceData(TraceNbTraces).Trace)
         nbtraces=SpikeTraceData(TraceNbTraces).Trace(j);
         
-        switch func        
+        switch func
+        
             case 1
             newtrace(j)=SpikeTraceData(k).Trace(m);
-            st='';
-            case 2 %sum
+            case 2
             newtrace(j)=sum(SpikeTraceData(k).Trace(m:m+nbtraces-1));
-            st='sum ';
-            case 3 %max
-            newtrace(j)=max(SpikeTraceData(k).Trace(m:m+nbtraces-1));
-            st='max ';
-            case 4 %min
-            newtrace(j)=min(SpikeTraceData(k).Trace(m:m+nbtraces-1));
-            st='min ';
         end
         m=m+nbtraces %jump to Traces from next file
     end
@@ -166,7 +159,7 @@ for k=TracesToCompact
     SpikeTraceData(BeginTrace+n).Trace=newtrace;
     SpikeTraceData(BeginTrace+n).DataSize=length(newtrace);
     
-    name=[SpikeTraceData(k).Label.ListText ', ' st 'per file'];
+    name=[SpikeTraceData(k).Label.ListText ' ,per file'];
     SpikeTraceData(BeginTrace+n).Label.ListText=name;
     SpikeTraceData(BeginTrace+n).Label.YLabel=SpikeTraceData(k).Label.YLabel;
     SpikeTraceData(BeginTrace+n).Label.XLabel='file nb';
