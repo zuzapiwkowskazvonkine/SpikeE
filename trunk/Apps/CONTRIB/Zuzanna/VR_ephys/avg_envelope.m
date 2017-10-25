@@ -18,9 +18,13 @@ else
 end
 
 size(sum)
+<<<<<<< HEAD
 
 n=0;
 
+=======
+n=0;
+>>>>>>> ec9ba4e6e1c69132a049a3f08caa245f25afbe97
 for i=1:length(SpikeTraceData(tr_events).Trace)
     
 
