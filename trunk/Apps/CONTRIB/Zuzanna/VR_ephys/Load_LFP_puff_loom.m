@@ -221,7 +221,7 @@ try
      
         
     else
-        Tmp=load(LocalFile,'SpikeTraceData');
+        Tmp=load(LocalFile);
         
         SpikeTraceData(BeginTrace).Trace=Tmp.LFP_data;
         SpikeTraceData(BeginTrace).XVector=0.001*Tmp.LFP_times; %converting to seconds
