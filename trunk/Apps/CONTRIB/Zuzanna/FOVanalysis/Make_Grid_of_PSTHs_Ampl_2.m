@@ -68,8 +68,8 @@ global SpikeImageData;
 global DLPstim;
 global SpikeTraceData;
 
-set(handles.SavingPath,'String','C:\Users\Zuzanna\Documents\DataStanford2013\Analysis\Surprise_DCN_SU_subset\Other\PSTHsPlot');
-handles.Path='C:\Users\Zuzanna\Documents\DataStanford2013\Analysis\Surprise_DCN_SU_subset\Other\PSTHsPlot';
+set(handles.SavingPath,'String','C:\Users\Zuzanna\Documents\DataStanford2013\Analysis\Surprise_DCN_SU_subset_OneBin_10ms\Other\PSTHsPlot');
+handles.Path='C:\Users\Zuzanna\Documents\DataStanford2013\Analysis\Surprise_DCN_SU_subset_OneBin_10ms\Other\PSTHsPlot';
 
     
    if ~isempty(SpikeTraceData)

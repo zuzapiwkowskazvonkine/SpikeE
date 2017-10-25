@@ -28,8 +28,12 @@ for i=1:length(SpikeTraceData(tr_events).Trace)
     startt=SpikeTraceData(tr_events).XVector(i)-prewin;
     stopt=SpikeTraceData(tr_events).XVector(i)+postwin;
     
+<<<<<<< HEAD
     if startt>=150 && stopt<=250%SpikeTraceData(tr_lfp).XVector(end)
         
+=======
+    if  stopt<=SpikeTraceData(tr_lfp).XVector(end)
+>>>>>>> ec9ba4e6e1c69132a049a3f08caa245f25afbe97
         startx=ceil(startt/deltat);
         stopx=ceil(stopt/deltat);
         tot=stopx-startx+1
@@ -37,6 +41,7 @@ for i=1:length(SpikeTraceData(tr_events).Trace)
             stopx=stopx-1;
         end
         
+<<<<<<< HEAD
         
         
         sum=sum+abs(SpikeTraceData(tr_lfp).Trace(startx:stopx));
@@ -49,6 +54,14 @@ end
 
 % avg=sum/length(SpikeTraceData(tr_events).Trace);
 avg=sum/n;
+=======
+        sum=sum+abs(SpikeTraceData(tr_lfp).Trace(startx:stopx));
+        n=n+1;
+    end
+end
+
+avg=sum/n %length(SpikeTraceData(tr_events).Trace);
+>>>>>>> ec9ba4e6e1c69132a049a3f08caa245f25afbe97
 avg_times=[0:deltat:ceil(prewin+postwin)];
 if max(size(avg))~=max(size(avg_times))
    avg_times=[0:deltat:ceil(prewin+postwin)-deltat];

@@ -65,7 +65,12 @@ i=length(SpikeTraceData(tr_loomtimes).Trace)
 %looping from the end for easier point removal
 while i>0
 
-    t=SpikeTraceData(tr_loomtimes).XVector(i)
+    t=SpikeTraceData(tr_loomtimes).XVector(i) 
+    v=[];
+    v=find(SpikeTraceData(tr_puffs).XVector>t);
+    if length(v)>=1
+        SpikeTraceData(tr_puffs).XVector(v(1))
+    end
     
     % this below does not work because the time steps in tr_loompos are
     % irregular, not all exactly equal to dt
@@ -85,7 +90,22 @@ while i>0
         SpikeTraceData(tr_loomfront_puff).DataSize=SpikeTraceData(tr_loomfront_puff).DataSize-1;
         
         %here test whether puff present or not within 1s window after
-        %visual stim: TODO
+        %visual stim:
+        if length(v)>=1
+            if SpikeTraceData(tr_puffs).XVector(v(1))<t+1 %first puff following looming is less than 1s after looming starts, remove from 'up' list
+                SpikeTraceData(tr_loomup).XVector(i)=[]; %remove stim from 'up' list
+                SpikeTraceData(tr_loomup).Trace(i)=[];
+                SpikeTraceData(tr_loomup).DataSize=SpikeTraceData(tr_loomup).DataSize-1;
+            else %no puff after looming; remove from "up+puff' list
+                SpikeTraceData(tr_loomup_puff).XVector(i)=[]; %remove stim from 'up+puff' list
+                SpikeTraceData(tr_loomup_puff).Trace(i)=[];
+                SpikeTraceData(tr_loomup_puff).DataSize=SpikeTraceData(tr_loomup_puff).DataSize-1;
+            end
+        else %no puff after last looming
+            SpikeTraceData(tr_loomup_puff).XVector(i)=[]; %remove stim from 'up+puff' list
+            SpikeTraceData(tr_loomup_puff).Trace(i)=[];
+            SpikeTraceData(tr_loomup_puff).DataSize=SpikeTraceData(tr_loomup_puff).DataSize-1;
+        end
         
     else %front stimulus
         
@@ -98,7 +118,22 @@ while i>0
         SpikeTraceData(tr_loomup_puff).DataSize=SpikeTraceData(tr_loomup_puff).DataSize-1;
         
         %here test whether puff present or not within 1s window after
-        %visual stim: TODO
+        %visual stim:
+        if length(v)>=1
+            if SpikeTraceData(tr_puffs).XVector(v(1))<t+1 %first puff following looming is less than 1s after looming starts, remove from 'front' list
+                SpikeTraceData(tr_loomfront).XVector(i)=[]; %remove stim from 'up' list
+                SpikeTraceData(tr_loomfront).Trace(i)=[];
+                SpikeTraceData(tr_loomfront).DataSize=SpikeTraceData(tr_loomfront).DataSize-1;
+            else %no puff after looming; remove from "front+puff' list
+                SpikeTraceData(tr_loomfront_puff).XVector(i)=[]; %remove stim from 'front+puff' list
+                SpikeTraceData(tr_loomfront_puff).Trace(i)=[];
+                SpikeTraceData(tr_loomfront_puff).DataSize=SpikeTraceData(tr_loomfront_puff).DataSize-1;
+            end
+        else %no puff after last looming
+            SpikeTraceData(tr_loomfront_puff).XVector(i)=[]; %remove stim from 'front+puff' list
+            SpikeTraceData(tr_loomfront_puff).Trace(i)=[];
+            SpikeTraceData(tr_loomfront_puff).DataSize=SpikeTraceData(tr_loomup_puff).DataSize-1;
+        end
         
     end
 i=i-1;
