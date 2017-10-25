@@ -35,14 +35,14 @@ for i=1:length(SpikeTraceData(tr_events).Trace)
 
         startx=ceil(startt/deltat);
         stopx=ceil(stopt/deltat);
-        tot=stopx-startx+1
+        tot=stopx-startx+1;
         if tot~=size(sum,2)
             stopx=stopx-1;
         end
         
         
         
-        sum=sum+abs(SpikeTraceData(tr_lfp).Trace(startx:stopx));
+        sum=sum+(SpikeTraceData(tr_lfp).Trace(startx:stopx));
         
         
         n=n+1;
