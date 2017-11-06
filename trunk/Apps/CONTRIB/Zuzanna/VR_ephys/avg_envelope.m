@@ -33,8 +33,8 @@ for i=1:length(SpikeTraceData(tr_events).Trace)
 
     if  stopt<=SpikeTraceData(tr_lfp).XVector(end)
 
-        startx=ceil(startt/deltat);
-        stopx=ceil(stopt/deltat);
+        startx=ceil(startt/deltat)
+        stopx=ceil(stopt/deltat)
         tot=stopx-startx+1;
         if tot~=size(sum,2)
             stopx=stopx-1;
