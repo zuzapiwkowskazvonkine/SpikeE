@@ -58,14 +58,20 @@ while i>0
     t=SpikeTraceData(tr_twitches).XVector(i);
     v=[];
     v=find(SpikeTraceData(tr_puffs).XVector<=t);
-    if length(v)>=1
-       tpuff=SpikeTraceData(tr_puffs).XVector(v(end)); %closest time of puff preceding twitch;
-       if t-tpuff<win||t>tend||t<tstart %puff close to twitch, remove from list of 'twitches only'       
+    if t>tend||t<tstart
         SpikeTraceData(tr_tw_only).XVector(i)=[]; %remove twitch from 'tw only' list
         SpikeTraceData(tr_tw_only).Trace(i)=[];
-        SpikeTraceData(tr_tw_only).DataSize=SpikeTraceData(tr_tw_only).DataSize-1;         
-       end   
-    end      
+        SpikeTraceData(tr_tw_only).DataSize=SpikeTraceData(tr_tw_only).DataSize-1;
+    else
+        if length(v)>=1
+            tpuff=SpikeTraceData(tr_puffs).XVector(v(end)); %closest time of puff preceding twitch;
+            if t-tpuff<win %puff close to twitch, remove from list of 'twitches only'
+                SpikeTraceData(tr_tw_only).XVector(i)=[]; %remove twitch from 'tw only' list
+                SpikeTraceData(tr_tw_only).Trace(i)=[];
+                SpikeTraceData(tr_tw_only).DataSize=SpikeTraceData(tr_tw_only).DataSize-1;
+            end
+        end
+    end
     i=i-1;
 end
 

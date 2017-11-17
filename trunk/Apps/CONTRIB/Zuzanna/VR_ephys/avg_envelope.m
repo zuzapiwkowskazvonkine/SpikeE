@@ -4,9 +4,10 @@ function [avg_times,avg] = avg_envelope(tr_lfp,tr_events,prewin,postwin)
 %tr_events: num of events trace in SpikeTraceData (ie airpuffs) to use for event times around
 %which to average 
 %prewin: window to use before each event (in sec)
-%postwin: window to use after each even (in sec)
+%postwin: window to use after each event (in sec)
 
 %Zuzanna Piwkowska 18/10/2017
+
 
 global SpikeTraceData
 
@@ -33,8 +34,8 @@ for i=1:length(SpikeTraceData(tr_events).Trace)
 
     if  stopt<=SpikeTraceData(tr_lfp).XVector(end)
 
-        startx=ceil(startt/deltat)
-        stopx=ceil(stopt/deltat)
+        startx=(startt/deltat)
+        stopx=(stopt/deltat)
         tot=stopx-startx+1;
         if tot~=size(sum,2)
             stopx=stopx-1;
@@ -52,9 +53,12 @@ end
 
 % avg=sum/length(SpikeTraceData(tr_events).Trace);
 avg=sum/n;
-avg_times=[0:deltat:ceil(prewin+postwin)];
+avg_times=[];
+avg_times=[0:deltat:(prewin+postwin)]
+max(size(avg_times))
 if max(size(avg))~=max(size(avg_times))
-   avg_times=[0:deltat:ceil(prewin+postwin)-deltat];
+   avg_times=[0:deltat:(prewin+postwin)-deltat];
 end
+max(size(avg_times))
 figure
 plot(avg_times,avg);
