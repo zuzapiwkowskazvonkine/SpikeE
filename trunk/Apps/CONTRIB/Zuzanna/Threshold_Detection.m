@@ -183,6 +183,10 @@ set(handles.Nb_Crossings,'String',int2str(SpikeTraceData(BeginTrace+n-1).DataSiz
 
 function times=Thresh_Cross(trace,timepts,thresh,lowhigh,min_int,handles)
 
+if size(trace,1)>size(timepts,1)
+    timepts=timepts';
+end
+
 if size(trace,1)>size(trace,2)
 m2=[timepts trace];
 else
